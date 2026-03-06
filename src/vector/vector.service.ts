@@ -22,7 +22,7 @@ export class VectorService {
     const metadataLiteral = JSON.stringify(metadata);
 
     await this.prisma.$executeRaw`
-      INSERT INTO "DocumentChunk" ("content", "metadata", "embedding")
+      INSERT INTO "document_chunks" ("content", "metadata", "embedding")
       VALUES (${content}, ${metadataLiteral}::jsonb, ${vectorLiteral}::vector)
     `;
   }
