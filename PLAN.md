@@ -1,8 +1,7 @@
 # 开发计划
 
-目标：打造一个AI知识库助手
-后端技术：NestJs + Prisma + PostgreSQL + pgvector
-前端技术：vue3或react
+目标：实现一个AI知识库助手的API服务
+技术栈：NestJs + Prisma + PostgreSQL + pgvector
 
 ## 将项目拆解为 **4 个里程碑阶段**
 
