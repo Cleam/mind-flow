@@ -1,5 +1,9 @@
 {
   "chat.tools.terminal.autoApprove": {
-    "pnpm": true
+    "pnpm": true,
+    "/^cd /Users/lee/Documents/code/study/mind-flow && node -e \"\nconst fs = require\\('fs'\\);\nconst pkg = JSON\\.parse\\(fs\\.readFileSync\\('package\\.json', 'utf8'\\)\\);\ndelete pkg\\.jest;\nfs\\.writeFileSync\\('package\\.json', JSON\\.stringify\\(pkg, null, 2\\)\\);\n\" && pnpm test 2>&1 \\| head -30$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }

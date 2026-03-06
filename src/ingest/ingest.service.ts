@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { VectorService } from '../vector/vector.service';
+import { VectorService } from '../vector/vector.service.js';
 
 @Injectable()
 export class IngestService {
@@ -10,10 +10,14 @@ export class IngestService {
   async testIngest(texts: string[]): Promise<{ insertedCount: number }> {
     for (const [index, text] of texts.entries()) {
       const embedding = this.mockEmbedding();
-      await this.vectorService.saveChunk(text, {
-        source: 'test-ingest',
-        chunkIndex: index,
-      }, embedding);
+      await this.vectorService.saveChunk(
+        text,
+        {
+          source: 'test-ingest',
+          chunkIndex: index,
+        },
+        embedding,
+      );
     }
 
     return { insertedCount: texts.length };

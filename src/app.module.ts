@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { IngestModule } from './ingest/ingest.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { VectorModule } from './vector/vector.module';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { IngestModule } from './ingest/ingest.module.js';
+import { PrismaModule } from './prisma/prisma.module.js';
+import { VectorModule } from './vector/vector.module.js';
 
 @Module({
   imports: [

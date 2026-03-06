@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { VectorModule } from '../vector/vector.module';
-import { IngestController } from './ingest.controller';
-import { IngestService } from './ingest.service';
+import { VectorModule } from '../vector/vector.module.js';
+import { IngestController } from './ingest.controller.js';
+import { IngestService } from './ingest.service.js';
 
 @Module({
   imports: [VectorModule],

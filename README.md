@@ -51,3 +51,36 @@ pnpm start:dev
   "insertedCount": 2
 }
 ```
+
+## 本地开发
+
+### 快速开始
+
+```bash
+# 1. 启动 PostgreSQL + pgvector
+docker-compose up -d
+
+# 2. 创建 pgvector 扩展（如需）
+docker-compose exec postgres psql -U postgres -d mind_flow -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+# 3. 初始化数据库
+pnpm prisma:migrate:dev
+
+# 4. 启动开发服务
+pnpm start:dev
+```
+
+更多详见 [本地开发指南](LOCAL_SETUP.md)
+
+### 验证接口
+
+```bash
+curl -X POST http://localhost:3000/test-ingest \
+  -H "Content-Type: application/json" \
+  -d '{"texts": ["文本1", "文本2"]}'
+```
+
+预期响应：
+```json
+{"insertedCount": 2}
+```
