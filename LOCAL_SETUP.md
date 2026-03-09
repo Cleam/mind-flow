@@ -64,9 +64,31 @@ pnpm test:watch    # 监听模式
 ```dotenv
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/mind_flow?schema=public"
 PORT=3000
+EMBEDDING_PROVIDER="mock"
 ```
 
 如需修改数据库连接，编辑 `.env` 文件即可。
+
+Embedding provider 可切换：
+
+```dotenv
+# 可选 mock | qwen | openai
+EMBEDDING_PROVIDER="mock"
+
+# qwen
+QWEN_API_KEY=""
+QWEN_BASE_URL="https://dashscope.aliyuncs.com/api/v1"
+QWEN_EMBEDDING_MODEL="text-embedding-v4"
+
+# openai
+OPENAI_API_KEY=""
+OPENAI_BASE_URL="https://api.openai.com/v1"
+OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
+```
+
+说明：
+- 本地联调建议先使用 `EMBEDDING_PROVIDER=mock`，无需外部 API Key。
+- 切换到 `qwen` 或 `openai` 时，需要配置对应 API Key。
 
 ## 常用命令
 

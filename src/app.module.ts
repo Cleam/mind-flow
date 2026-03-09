@@ -5,6 +5,7 @@ import { AppService } from './app.service.js';
 import { IngestModule } from './ingest/ingest.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { VectorModule } from './vector/vector.module.js';
+import { RerankModule } from './rerank/rerank.module.js';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { VectorModule } from './vector/vector.module.js';
     PrismaModule,
     VectorModule,
     IngestModule,
+    RerankModule,
   ],
   controllers: [AppController],
   providers: [AppService],

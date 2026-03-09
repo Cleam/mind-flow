@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { TestIngestDto } from './dto/test-ingest.dto.js';
-import { IngestService } from './ingest.service.js';
+import { UploadDocumentsDto } from './dto/upload-documents.dto.js';
+import { IngestService, UploadDocumentsResult } from './ingest.service.js';
 
 @Controller()
 export class IngestController {
@@ -11,5 +12,12 @@ export class IngestController {
     @Body() body: TestIngestDto,
   ): Promise<{ insertedCount: number }> {
     return this.ingestService.testIngest(body.texts);
+  }
+
+  @Post('upload')
+  async upload(
+    @Body() body: UploadDocumentsDto,
+  ): Promise<UploadDocumentsResult> {
+    return this.ingestService.processDocuments(body);
   }
 }
