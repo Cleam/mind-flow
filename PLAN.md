@@ -26,14 +26,14 @@
 
 ### 🧠 阶段 2：集成 Embedding 与文档切片（入库链路）
 
-**目标**：接入真实的 Embedding API（如 OpenAI），实现带 Overlap 的切片逻辑。
+**目标**：接入真实的 Embedding API（如 Qwen），实现带 Overlap 的切片逻辑。
 
 ```
 > **角色**：AI 工程师
 > **任务**：完善文档入库（Ingestion）逻辑。
 >
-> 1. **切片逻辑**：在 `IngestionService` 中实现一个 `splitText` 方法。参数包含 `chunkSize` (500) 和 `chunkOverlap` (100)。要求逻辑健壮，能处理短文本。
-> 2. **模型对接**：创建一个 `EmbeddingService`，接入 OpenAI 的 `text-embedding-3-small` 接口（使用 `axios` 或官方 SDK）。
+> 1. **切片逻辑**：在 `IngestService` 中实现一个 `splitText` 方法。参数包含 `chunkSize` (500) 和 `chunkOverlap` (100)。要求逻辑健壮，能处理短文本。
+> 2. **模型对接**：创建一个 `EmbeddingService`，接入 Qwen 的 `text-embedding-v4` 接口（使用 `axios` 或官方 SDK）。
 > 3. **流水线串联**：在 `processDocument` 方法中，将“切片 -> 获取向量 -> 批量存入 Prisma”的流程串联起来。
 > 4. **验证逻辑**：提供一个 `POST /upload` 接口，我上传一段长文本，你返回切片的数量和存入成功的状态。
 ```
