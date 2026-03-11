@@ -8,8 +8,15 @@ import { LlmProviderConfig } from '../base/llm-provider.interface.js';
 export class QwenLlmProvider extends BaseLlmProvider {
   private static readonly DEFAULT_BASE_URL =
     'https://dashscope.aliyuncs.com/compatible-mode/v1';
-  private static readonly DEFAULT_EMBEDDING_MODEL = 'text-embedding-v3';
+  private static readonly DEFAULT_EMBEDDING_MODEL = 'text-embedding-v4';
   private static readonly DEFAULT_RERANK_MODEL = 'gte-rerank';
+
+  private static readonly OPENAI_COMPATIBLE_EMBEDDING_MODELS = [
+    'text-embedding-v4',
+    'text-embedding-v3',
+    'text-embedding-v2',
+    'text-embedding-v1',
+  ] as const;
 
   getName(): string {
     return 'Qwen';
@@ -27,6 +34,7 @@ export class QwenLlmProvider extends BaseLlmProvider {
       body: JSON.stringify({
         model: this.config.embeddingModel,
         input: text,
+        dimensions: QwenLlmProvider.EMBEDDING_DIMENSION,
       }),
       signal: AbortSignal.timeout(this.config.timeout),
     });
@@ -59,6 +67,7 @@ export class QwenLlmProvider extends BaseLlmProvider {
       body: JSON.stringify({
         model: this.config.embeddingModel,
         input: texts,
+        dimensions: QwenLlmProvider.EMBEDDING_DIMENSION,
       }),
       signal: AbortSignal.timeout(this.config.timeout),
     });
@@ -144,6 +153,20 @@ export class QwenLlmProvider extends BaseLlmProvider {
   protected validateConfig(): void {
     if (!this.config.apiKey) {
       throw new Error('Qwen Provider 缺少 API Key');
+    }
+
+    // 如果使用的是 OpenAI 兼容模式 baseUrl，校验 embedding 模型
+    if (
+      this.config.baseUrl?.includes('compatible-mode') &&
+      !QwenLlmProvider.OPENAI_COMPATIBLE_EMBEDDING_MODELS.includes(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        this.config.embeddingModel as any,
+      )
+    ) {
+      throw new Error(
+        `OpenAI 兼容模式下不支持 embedding 模型: ${this.config.embeddingModel}，` +
+          `请使用: ${QwenLlmProvider.OPENAI_COMPATIBLE_EMBEDDING_MODELS.join(', ')}`,
+      );
     }
   }
 }

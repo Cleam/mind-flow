@@ -73,6 +73,7 @@ pnpm start:dev
 {
   "insertedCount": 2
 }
+```
 
 ### POST /upload
 
@@ -166,11 +167,11 @@ pnpm start:dev
 ### 验证接口
 
 ```bash
-curl -X POST http://localhost:3000/test-ingest \
+curl -X POST http://localhost:3300/test-ingest \
   -H "Content-Type: application/json" \
   -d '{"texts": ["文本1", "文本2"]}'
 
-curl -X POST http://localhost:3000/upload \
+curl -X POST http://localhost:3300/upload \
   -H "Content-Type: application/json" \
   -d '{
     "documents": [
@@ -181,7 +182,7 @@ curl -X POST http://localhost:3000/upload \
     "chunkOverlap": 100
   }'
 
-curl -X POST http://localhost:3000/rerank \
+curl -X POST http://localhost:3300/rerank \
   -H "Content-Type: application/json" \
   -d '{
     "query": "如何使用 NestJS？",
@@ -194,6 +195,7 @@ curl -X POST http://localhost:3000/rerank \
 ```
 
 预期响应：
+
 ```json
-{"insertedCount": 2}
+{ "insertedCount": 2 }
 ```

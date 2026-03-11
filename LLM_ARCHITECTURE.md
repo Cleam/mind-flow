@@ -42,7 +42,7 @@ interface LlmProvider {
 ### QwenLlmProvider（阿里云百炼）
 
 - **协议**：兼容 OpenAI 格式
-- **Embedding**：`text-embedding-v3`（可配置）
+- **Embedding**：`text-embedding-v4`（可配置，默认请求 `dimensions=1536`）
 - **Rerank**：`gte-rerank`（可配置）
 - **特性**：支持批量 Embedding
 
@@ -50,7 +50,7 @@ interface LlmProvider {
 ```bash
 QWEN_API_KEY="sk-xxx"
 QWEN_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-QWEN_EMBEDDING_MODEL="text-embedding-v3"
+QWEN_EMBEDDING_MODEL="text-embedding-v4"
 QWEN_RERANK_MODEL="gte-rerank"
 ```
 
