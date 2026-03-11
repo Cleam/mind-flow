@@ -2,6 +2,11 @@
 
 知识如流 - AI知识库助手
 
+当前已具备两条入库链路：
+
+- `POST /upload`：接收 JSON 文本文档数组，适合程序内部或手工传文本。
+- `POST /upload-files`：接收 multipart 文件，支持 `pdf/docx/md/txt` 解析后清洗、智能切片并入向量库。
+
 ## 阶段 1 已实现能力
 
 - `DocumentChunk` 数据模型：`id`、`content`、`metadata(Json)`、`embedding(vector(1536))`
@@ -30,7 +35,24 @@
 
 - `POST /test-ingest`：接收字符串数组，使用 Mock 向量入库（兼容阶段 1）
 - `POST /upload`：多文档批量上传，支持切片 + Embedding + 向量存储
+- `POST /upload-files`：多文件上传，支持 `pdf/docx/md/txt` 解析 + 文本清洗 + 智能切片 + Embedding + 向量存储
 - `POST /rerank`：语义重排序，根据查询对文档列表进行相关性排序
+
+### 文件上传链路（2026-03-11）
+
+新增文件入库能力，面向真实知识库文档导入场景：
+
+- 文件解析：`pdf` 使用 `pdf-parse`，`docx` 使用 `mammoth`，`md/txt` 按 UTF-8 文本读取
+- 文本清洗：统一换行、修复常见 PDF 断词、清理空字节、压缩多余空行、去除行尾空白
+- 智能切片：段落优先，超长段落按句子边界拆分，仍超长则退回字符窗口；默认 `chunkSize=400`、`chunkOverlap=80`
+- 容错策略：单文件解析失败或单分片入库失败不会中断整批处理，统一体现在返回结果的 `failures` 中
+
+### 支持格式与限制
+
+- 支持格式：`pdf`、`docx`、`md`、`txt`
+- 支持 MIME：`application/pdf`、`application/vnd.openxmlformats-officedocument.wordprocessingml.document`、`text/plain`、`text/markdown`、`text/x-markdown`
+- 单文件大小上限：20MB
+- 单次最多上传：10 个文件
 
 ## 本地启动
 
@@ -105,6 +127,59 @@ pnpm start:dev
   "failedCount": 0,
   "status": "success",
   "failures": []
+}
+```
+
+### POST /upload-files
+
+请求类型：`multipart/form-data`
+
+表单字段：
+
+- `files`：可重复，支持一次上传多个文件
+- `chunkSize`：可选，默认 `400`
+- `chunkOverlap`：可选，默认 `80`，必须小于 `chunkSize`
+
+示例：
+
+```bash
+curl -X POST http://localhost:3300/upload-files \
+  -F "files=@./samples/guide.pdf" \
+  -F "files=@./samples/notes.md" \
+  -F "chunkSize=400" \
+  -F "chunkOverlap=80"
+```
+
+响应体（示例）：
+
+```json
+{
+  "documentCount": 2,
+  "totalChunks": 6,
+  "savedCount": 6,
+  "failedCount": 0,
+  "status": "success",
+  "failures": []
+}
+```
+
+部分失败示例：
+
+```json
+{
+  "documentCount": 2,
+  "totalChunks": 4,
+  "savedCount": 3,
+  "failedCount": 1,
+  "status": "partial",
+  "failures": [
+    {
+      "documentIndex": 1,
+      "chunkIndex": -1,
+      "source": "broken.pdf",
+      "reason": "PDF 解析失败: ..."
+    }
+  ]
 }
 ```
 
@@ -192,10 +267,29 @@ curl -X POST http://localhost:3300/rerank \
     ],
     "topK": 1
   }'
+
+curl -X POST http://localhost:3300/upload-files \
+  -F "files=@./samples/demo.pdf" \
+  -F "files=@./samples/demo.docx" \
+  -F "chunkSize=400" \
+  -F "chunkOverlap=80"
 ```
 
 预期响应：
 
 ```json
 { "insertedCount": 2 }
+```
+
+文件上传接口的预期响应结构与 `/upload` 一致：
+
+```json
+{
+  "documentCount": 2,
+  "totalChunks": 6,
+  "savedCount": 6,
+  "failedCount": 0,
+  "status": "success",
+  "failures": []
+}
 ```

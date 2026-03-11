@@ -4,6 +4,7 @@
 
 **Mind-flow** is a 4-phase RAG knowledge base assistant using NestJS 11 + Prisma 7 + PostgreSQL + pgvector.  
 Currently at **Phase 2 complete**: Embedding API integration (Qwen/OpenAI/Ollama) + text chunking with overlap + LLM Provider strategy pattern.  
+Additionally, the ingestion pipeline now supports multipart file upload with parsing, text cleaning, and smart chunking for `pdf/docx/md/txt` documents.  
 See [PLAN.md](../PLAN.md) for full roadmap.
 
 ## Architecture & Key Decisions
@@ -13,7 +14,8 @@ See [PLAN.md](../PLAN.md) for full roadmap.
 - **AppModule**: Orchestrates all sub-modules; imports `ConfigModule`, `PrismaModule`, `VectorModule`, `IngestModule`, `LlmModule`, `EmbeddingModule`, `RerankModule`
 - **PrismaModule**: Global singleton providing database client via `PrismaService`
 - **VectorModule**: Handles vector embedding storage with `VectorService` (similarity search)
-- **IngestModule**: Document ingestion pipeline with `IngestController` + `IngestService` + `ChunkingService`
+- **DocumentParserModule**: File parsing layer for uploaded documents (`pdf/docx/md/txt`)
+- **IngestModule**: Document ingestion pipeline with `IngestController` + `IngestService` + `TextCleanerService` + `SmartChunkingService`
 - **LlmModule**: Abstraction layer for LLM providers using **Strategy Pattern**
   - `LlmProvider` interface (core abstraction)
   - `BaseLlmProvider` abstract class
@@ -33,6 +35,7 @@ See [PLAN.md](../PLAN.md) for full roadmap.
 3. **Vector Storage**: 1536-dimension PostgreSQL vectors via pgvector extension. Use `Unsupported("vector(1536)")` in schema.
 4. **Raw SQL for Vectors**: Complex vector operations use Prisma `$executeRaw` (e.g., `saveChunk` in `VectorService`) because Prisma doesn't have first-class vector support.
 5. **Strategy Pattern for LLM Providers**: All LLM capabilities (embedding, reranking, generation) abstracted via `LlmProvider` interface. Implementation automatically selected by `LlmProviderFactory` based on `EMBEDDING_PROVIDER` environment variable. Supports Qwen, OpenAI, Ollama, and Mock providers without code branching in service layers.
+6. **File Upload Ingestion**: `POST /upload-files` uses `FilesInterceptor('files', 10)` and multer memory storage. File parsing, cleaning, and chunking are kept as separate services so `IngestService` remains an orchestration layer.
 
 ## Data Model
 
@@ -40,7 +43,7 @@ See [PLAN.md](../PLAN.md) for full roadmap.
 
 - `id` (BigInt): Auto-increment primary key
 - `content` (String): Document text chunk
-- `metadata` (Json): Flexible metadata (`{source, chunkIndex, document}`) — required fields: `source`, `chunkIndex`
+- `metadata` (Json): Flexible metadata. Current ingestion flow writes at least `source` and `chunkIndex`, and file/JSON upload paths also include `documentIndex`
 - `embedding` (vector(1536)): PostgreSQL vector type (always 1536 dimensions)
 - `createdAt` (DateTime): Auto-timestamped
 
@@ -116,6 +119,30 @@ export class TestIngestDto {
 }
 ```
 
+For multipart file upload options, use numeric form fields transformed via `class-transformer`, and validate `chunkOverlap < chunkSize` with a custom validator.
+
+### File Ingestion Pipeline
+
+Current file ingestion path:
+
+1. `IngestController.uploadFiles()` validates file count, MIME, and size.
+2. `DocumentParserService.parseMany()` extracts text from uploaded files.
+3. `TextCleanerService.clean()` normalizes raw text and removes common parser artifacts.
+4. `SmartChunkingService.split()` performs paragraph-first chunking with sentence fallback and character sliding-window fallback.
+5. `IngestService.processFiles()` calls `EmbeddingService.embed()` and `VectorService.saveChunk()` for each chunk.
+
+Supported file formats in the current codebase:
+
+- `pdf` via `pdf-parse`
+- `docx` via `mammoth`
+- `md` and `txt` via UTF-8 text decoding
+
+Upload constraints in the current controller:
+
+- Max 10 files per request
+- Max 20MB per file
+- Allowed MIME values: `application/pdf`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `text/plain`, `text/markdown`, `text/x-markdown`
+
 ### Vector Operations
 
 1. **Embedding Dimension Validation**: Always validate embedding dimension (must be 1536) before storage; use `EmbeddingService` for vectorization, never call LLM provider directly
@@ -128,7 +155,7 @@ export class TestIngestDto {
    ```
 3. **Metadata Structure**: Always include `source` and `chunkIndex` fields; metadata is auto-serialized as JSON in Prisma:
    ```typescript
-   const metadata = { source: 'doc1.pdf', chunkIndex: 0, document: 'filename' };
+  const metadata = { source: 'doc1.pdf', documentIndex: 0, chunkIndex: 0 };
    ```
 4. **Similarity Search**: Use pgvector's `<=>` cosine distance operator with `$queryRaw`; always include `threshold` filtering and `limit` pagination
 5. **Provider-Agnostic Code**: Use injected `EmbeddingService` or `RerankService` in service layers, never call LLM provider directly — allows transparent provider switching
@@ -136,9 +163,11 @@ export class TestIngestDto {
 ### Constants
 
 - Vector dimension: `1536` (used in `EmbeddingService`, `VectorService`, `IngestService`; keep synchronized across all modules)
-- Metadata required fields: `source`, `chunkIndex`, `document` (expandable as needed)
-- Default chunk size: `500` characters
-- Default chunk overlap: `100` characters
+- Metadata required fields: `source`, `chunkIndex` (file and JSON upload paths also write `documentIndex`)
+- Default JSON upload chunk size: `500` characters
+- Default JSON upload chunk overlap: `100` characters
+- Default file upload chunk size: `400` characters
+- Default file upload chunk overlap: `80` characters
 - Default similarity threshold: `0.5`
 - Default top-K limit: `3` (for RAG context retrieval)
 
@@ -149,6 +178,9 @@ export class TestIngestDto {
 | `prisma/schema.prisma`  | Data model definitions                          |
 | `prisma/migrations/`    | Database migration history                      |
 | `src/generated/prisma/` | Auto-generated Prisma client (ESM)              |
+| `src/document-parser/`  | File parsing module and parser tests            |
+| `src/ingest/text-cleaner.service.ts` | Parsed text normalization          |
+| `src/ingest/smart-chunking.service.ts` | Paragraph-first chunking strategy |
 | `docker-compose.yml`    | Local PostgreSQL + pgvector setup               |
 | `.env`                  | Local environment variables (excluded from git) |
 | `jest.config.mjs`       | Unit test configuration                         |
@@ -176,22 +208,27 @@ When implementing new phases:
 
 - **Maintain constant vector dimension (1536)** across all modules
 - **Use existing service abstractions**: `EmbeddingService`, `RerankService` (never call LLM provider directly)
-- **Follow DI patterns**: Inject `PrismaService`, `EmbeddingService`, `VectorService` in constructors
+- **Follow DI patterns**: Inject `PrismaService`, `EmbeddingService`, `VectorService`, parser/cleaner/chunking services in constructors as needed
 - **ESM compliance**: All local imports must include `.js` extension
 - **Update `PLAN.md` progress** as milestones complete
 - **Single responsibility**: Each service has one reason to change (separation of concerns)
 - **Provider transparency**: Code should work identically with any LLM provider (Qwen, OpenAI, Ollama)
+- **Preserve dual ingestion modes**: keep `/upload` for JSON text ingestion and `/upload-files` for multipart file ingestion unless the task explicitly changes the API contract
+- **File upload failures should be partial-tolerant**: a single file parse failure must not abort the whole batch if other files remain processable
 
 ## Quick Checklist for New Features
 
 - [ ] Service has `@Injectable()` decorator
 - [ ] Local imports include `.js` extension (e.g., `./foo.js` not `./foo`)
 - [ ] DTOs use class-validator decorators (`@IsString`, `@IsNumber`, etc.)
+- [ ] Multipart numeric fields use `@Type(() => Number)` when coming from form-data
 - [ ] Raw SQL uses Prisma template literals (not string interpolation)
-- [ ] Metadata always includes: `source`, `chunkIndex`, `document`
+- [ ] Metadata always includes: `source`, `chunkIndex` (and `documentIndex` when relevant)
 - [ ] Vector dimension validated before storage (must be 1536)
 - [ ] Services use dependency injection, never call providers directly
 - [ ] Error handling includes specific error messages (e.g., "Embedding failed", "No relevant context")
+- [ ] File upload endpoints enforce MIME and size limits in controller or pipe
+- [ ] Parser, cleaner, and chunking changes are covered by unit tests
 - [ ] Prisma client generated: `pnpm prisma:generate`
 - [ ] Migration created if model changed: `pnpm prisma:migrate:dev`
 - [ ] Build succeeds: `pnpm build`
