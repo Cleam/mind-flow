@@ -17,6 +17,14 @@ describe('AppController (e2e)', () => {
       status: 'success',
       failures: [],
     }),
+    processFiles: jest.fn().mockResolvedValue({
+      documentCount: 1,
+      totalChunks: 3,
+      savedCount: 3,
+      failedCount: 0,
+      status: 'success',
+      failures: [],
+    }),
   };
 
   beforeEach(async () => {
@@ -95,5 +103,74 @@ describe('AppController (e2e)', () => {
         chunkOverlap: 100,
       })
       .expect(400);
+  });
+
+  // ─── /upload-files ─────────────────────────────────────────────────────────
+
+  it('/upload-files (POST) - txt 文件上传成功', async () => {
+    const txtContent = '这是一份纯文本文档，内容足够长以便验证完整的上传入库流程。';
+
+    await request(getHttpServer())
+      .post('/upload-files')
+      .attach('files', Buffer.from(txtContent, 'utf-8'), {
+        filename: 'test.txt',
+        contentType: 'text/plain',
+      })
+      .expect(201)
+      .expect({
+        documentCount: 1,
+        totalChunks: 3,
+        savedCount: 3,
+        failedCount: 0,
+        status: 'success',
+        failures: [],
+      });
+
+    expect(ingestServiceMock.processFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it('/upload-files (POST) - 支持自定义 chunkSize/chunkOverlap', async () => {
+    await request(getHttpServer())
+      .post('/upload-files')
+      .attach('files', Buffer.from('内容', 'utf-8'), {
+        filename: 'a.txt',
+        contentType: 'text/plain',
+      })
+      .field('chunkSize', '300')
+      .field('chunkOverlap', '60')
+      .expect(201);
+
+    const [, options] = ingestServiceMock.processFiles.mock.calls[0] as [
+      unknown,
+      { chunkSize: number; chunkOverlap: number },
+    ];
+    expect(options.chunkSize).toBe(300);
+    expect(options.chunkOverlap).toBe(60);
+  });
+
+  it('/upload-files (POST) - chunkOverlap >= chunkSize 返回 400', async () => {
+    await request(getHttpServer())
+      .post('/upload-files')
+      .attach('files', Buffer.from('hello', 'utf-8'), {
+        filename: 'a.txt',
+        contentType: 'text/plain',
+      })
+      .field('chunkSize', '100')
+      .field('chunkOverlap', '100')
+      .expect(400);
+  });
+
+  it('/upload-files (POST) - 不支持的文件类型返回 400', async () => {
+    await request(getHttpServer())
+      .post('/upload-files')
+      .attach('files', Buffer.from('data'), {
+        filename: 'evil.exe',
+        contentType: 'application/octet-stream',
+      })
+      .expect(400);
+  });
+
+  it('/upload-files (POST) - 不传文件返回 400', async () => {
+    await request(getHttpServer()).post('/upload-files').expect(400);
   });
 });

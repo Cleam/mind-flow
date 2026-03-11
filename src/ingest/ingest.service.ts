@@ -1,5 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { DocumentParserService } from '../document-parser/document-parser.service.js';
 import { EmbeddingService } from '../embedding/embedding.service.js';
+import { SmartChunkingService } from './smart-chunking.service.js';
+import { TextCleanerService } from './text-cleaner.service.js';
+import { UploadFilesOptionsDto } from './dto/upload-files-options.dto.js';
 import { UploadDocumentsDto } from './dto/upload-documents.dto.js';
 import { VectorService } from '../vector/vector.service.js';
 
@@ -30,6 +34,9 @@ export class IngestService {
   constructor(
     private readonly vectorService: VectorService,
     private readonly embeddingService: EmbeddingService,
+    private readonly parserService: DocumentParserService,
+    private readonly cleanerService: TextCleanerService,
+    private readonly chunkingService: SmartChunkingService,
   ) {}
 
   async testIngest(texts: string[]): Promise<{ insertedCount: number }> {
@@ -130,6 +137,58 @@ export class IngestService {
 
   async upload(body: UploadDocumentsDto): Promise<UploadDocumentsResult> {
     return this.processDocuments(body);
+  }
+
+  /**
+   * 文件上传入库主流程：解析 → 清洗 → 语义切片 → 向量化 → 入库
+   * 单文件解析失败不中断批次，结果汇总在 failures 中
+   */
+  async processFiles(
+    files: Express.Multer.File[],
+    options: UploadFilesOptionsDto,
+  ): Promise<UploadDocumentsResult> {
+    const { parsed, failures: parseFailures } =
+      await this.parserService.parseMany(files);
+
+    const failures: UploadFailureItem[] = parseFailures.map((f) => ({
+      documentIndex: f.fileIndex,
+      chunkIndex: -1,
+      source: f.source,
+      reason: f.reason,
+    }));
+
+    let totalChunks = 0;
+    let savedCount = 0;
+    let failedCount = 0;
+
+    for (const doc of parsed) {
+      const cleaned = this.cleanerService.clean(doc.content);
+      const chunks = this.chunkingService.split(
+        cleaned,
+        options.chunkSize,
+        options.chunkOverlap,
+      );
+
+      totalChunks += chunks.length;
+      const result = await this.saveDocumentChunks(
+        doc.fileIndex,
+        doc.source,
+        chunks,
+        failures,
+      );
+      savedCount += result.savedCount;
+      failedCount += result.failedCount;
+    }
+
+    const totalFailedCount = failedCount + parseFailures.length;
+    return {
+      documentCount: files.length,
+      totalChunks,
+      savedCount,
+      failedCount: totalFailedCount,
+      status: this.resolveUploadStatus(savedCount, totalFailedCount),
+      failures,
+    };
   }
 
   private async saveDocumentChunks(
