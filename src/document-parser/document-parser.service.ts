@@ -102,13 +102,16 @@ export class DocumentParserService {
 
   /** 使用 pdf-parse 提取 PDF 文本 */
   private async parsePdf(buffer: Buffer, warnings: string[]): Promise<string> {
+    let parser: {
+      getText: () => Promise<{ text: string; total?: number }>;
+      destroy?: () => Promise<void> | void;
+    } | null = null;
     try {
-      // pdf-parse 2.x 是 native ESM 模块，模块命名空间即可调用函数本身
-      const mod = await import('pdf-parse');
-      type PdfResult = { text: string; numpages: number };
-      const pdfParse = mod as unknown as (b: Buffer) => Promise<PdfResult>;
-      const result = await pdfParse(buffer);
-      if (result.numpages === 0) {
+      const { PDFParse } = await import('pdf-parse');
+      parser = new PDFParse({ data: buffer });
+
+      const result = await parser.getText();
+      if (result.total === 0) {
         warnings.push('PDF 无内容页');
       }
       return result.text;
@@ -116,6 +119,8 @@ export class DocumentParserService {
       throw new BadRequestException(
         `PDF 解析失败: ${error instanceof Error ? error.message : '未知错误'}`,
       );
+    } finally {
+      await parser?.destroy?.();
     }
   }
 

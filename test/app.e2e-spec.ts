@@ -108,7 +108,8 @@ describe('AppController (e2e)', () => {
   // ─── /upload-files ─────────────────────────────────────────────────────────
 
   it('/upload-files (POST) - txt 文件上传成功', async () => {
-    const txtContent = '这是一份纯文本文档，内容足够长以便验证完整的上传入库流程。';
+    const txtContent =
+      '这是一份纯文本文档，内容足够长以便验证完整的上传入库流程。';
 
     await request(getHttpServer())
       .post('/upload-files')

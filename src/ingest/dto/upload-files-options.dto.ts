@@ -9,9 +9,7 @@ import {
 } from 'class-validator';
 
 @ValidatorConstraint({ name: 'FileUploadChunkOptionsConstraint', async: false })
-class FileUploadChunkOptionsConstraint
-  implements ValidatorConstraintInterface
-{
+class FileUploadChunkOptionsConstraint implements ValidatorConstraintInterface {
   validate(_: unknown, args: ValidationArguments): boolean {
     const obj = args.object as UploadFilesOptionsDto;
     const size = obj.chunkSize ?? 400;

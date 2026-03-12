@@ -5,9 +5,22 @@
       "approve": true,
       "matchCommandLine": true
     },
-    "git -C /Users/lee/Documents/code/study/mind-flow": true
+    "git -C /Users/lee/Documents/code/study/mind-flow": true,
+    "/^node -e \"import\\('pdf-parse'\\)\\.then\\(m=>\\{console\\.log\\(Object\\.keys\\(m\\)\\); console\\.log\\('default type', typeof m\\.default\\); console\\.log\\('PDFParse type', typeof m\\.PDFParse\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\); process\\.exit\\(1\\);\\}\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e \"import\\('pdf-parse'\\)\\.then\\(\\(\\{PDFParse\\}\\)=>\\{console\\.log\\('proto',Object\\.getOwnPropertyNames\\(PDFParse\\.prototype\\)\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\);process\\.exit\\(1\\);\\}\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e \"import\\('pdf-parse'\\)\\.then\\(\\(\\{PDFParse\\}\\)=>\\{const s=PDFParse\\.toString\\(\\); console\\.log\\(s\\.slice\\(0,500\\)\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\);process\\.exit\\(1\\);\\}\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   },
   "cSpell.words": [
+    "autoincrement",
     "ollama",
     "Qwen",
     "rerank"
