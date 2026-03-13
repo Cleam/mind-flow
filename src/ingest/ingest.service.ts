@@ -27,9 +27,9 @@ export interface UploadDocumentsResult {
 
 @Injectable()
 export class IngestService {
-  private static readonly EMBEDDING_DIMENSION = 1024;
-  private static readonly DEFAULT_CHUNK_SIZE = 320;
-  private static readonly DEFAULT_CHUNK_OVERLAP = 40;
+  private static readonly EMBEDDING_DIMENSION = 1536;
+  private static readonly DEFAULT_CHUNK_SIZE = 500;
+  private static readonly DEFAULT_CHUNK_OVERLAP = 100;
 
   constructor(
     private readonly vectorService: VectorService,
