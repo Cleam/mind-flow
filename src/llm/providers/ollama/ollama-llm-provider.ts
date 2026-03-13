@@ -8,6 +8,7 @@ export class OllamaLlmProvider extends BaseLlmProvider {
   private static readonly DEFAULT_BASE_URL = 'http://localhost:11434';
   private static readonly DEFAULT_EMBEDDING_MODEL = 'nomic-embed-text';
   private static readonly DEFAULT_RERANK_MODEL = 'bge-reranker-base';
+  private static readonly DEFAULT_CHAT_MODEL = 'qwen2.5:7b-instruct';
 
   getName(): string {
     return 'Ollama';
@@ -78,6 +79,39 @@ export class OllamaLlmProvider extends BaseLlmProvider {
     return scores.sort((a, b) => b.score - a.score);
   }
 
+  async generate(prompt: string): Promise<string> {
+    this.validateText(prompt);
+
+    const response = await fetch(`${this.config.baseUrl}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.config.chatModel,
+        prompt,
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(this.config.timeout),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      this.handleHttpError(this.getName(), response.status, details);
+    }
+
+    const data = (await response.json()) as {
+      response?: string;
+    };
+    const answer = data.response?.trim();
+
+    if (!answer) {
+      throw new Error('Ollama 生成返回为空');
+    }
+
+    return answer;
+  }
+
   protected mergeWithDefaults(
     config: LlmProviderConfig,
   ): Required<LlmProviderConfig> {
@@ -87,6 +121,7 @@ export class OllamaLlmProvider extends BaseLlmProvider {
       embeddingModel:
         config.embeddingModel || OllamaLlmProvider.DEFAULT_EMBEDDING_MODEL,
       rerankModel: config.rerankModel || OllamaLlmProvider.DEFAULT_RERANK_MODEL,
+      chatModel: config.chatModel || OllamaLlmProvider.DEFAULT_CHAT_MODEL,
       timeout: config.timeout || BaseLlmProvider.DEFAULT_TIMEOUT,
     };
   }

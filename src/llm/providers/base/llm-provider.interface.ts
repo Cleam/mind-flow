@@ -34,6 +34,13 @@ export interface LlmProvider {
   ): Promise<Array<{ index: number; score: number; document: string }>>;
 
   /**
+   * 文本生成
+   * @param prompt 完整提示词
+   * @returns 生成结果
+   */
+  generate(prompt: string): Promise<string>;
+
+  /**
    * 检查 Provider 是否可用（API Key、网络等）
    */
   isAvailable(): Promise<boolean>;
@@ -47,5 +54,6 @@ export interface LlmProviderConfig {
   baseUrl?: string;
   embeddingModel?: string;
   rerankModel?: string;
+  chatModel?: string;
   timeout?: number;
 }

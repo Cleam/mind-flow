@@ -1,4 +1,9 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AppLoggerService } from '../../logger/logger.service.js';
 import { BusinessException } from '../exceptions/business.exception.js';
@@ -25,6 +30,8 @@ export class BusinessExceptionFilter implements ExceptionFilter<BusinessExceptio
       exceptionType: exception.constructor.name,
     });
 
-    response.status(HttpStatus.OK).json(errorResponse(exception.code, exception.msg));
+    response
+      .status(HttpStatus.OK)
+      .json(errorResponse(exception.code, exception.msg));
   }
 }

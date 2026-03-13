@@ -2,10 +2,11 @@
 
 知识如流 - AI知识库助手
 
-当前已具备两条入库链路：
+当前已实现三个阶段：
 
-- `POST /upload`：接收 JSON 文本文档数组，适合程序内部或手工传文本。
-- `POST /upload-files`：接收 multipart 文件，支持 `pdf/docx/md/txt` 解析后清洗、智能切片并入向量库。
+- **入库链路**：`POST /upload`（JSON 文本）+ `POST /upload-files`（multipart 文件，支持 `pdf/docx/md/txt`）
+- **重排序**：`POST /rerank`，基于语义相关性对多段落进行重新排序
+- **RAG 问答**：`POST /chat/ask`，向量检索 + 重排 + Prompt 工程 + LLM 生成，返回答案与引用来源
 
 ## 统一响应约定
 
@@ -79,6 +80,26 @@
 - 支持 MIME：`application/pdf`、`application/vnd.openxmlformats-officedocument.wordprocessingml.document`、`text/plain`、`text/markdown`、`text/x-markdown`
 - 单文件大小上限：20MB
 - 单次最多上传：10 个文件
+
+## 阶段 3 已实现能力（RAG 检索问答）
+
+基于阶段 2 的向量入库能力，实现了完整的 RAG 单轮问答链路：
+
+- **向量检索**：`VectorService.search(embedding, limit, threshold)` 使用 pgvector `<=>` 余弦距离算子，返回 Top-K 相关片段及分数
+- **重排精排**：可选调用 `RerankService` 对检索结果按相关性重新排序，失败时优雅降级为检索顺序
+- **Prompt 引擎**：`PromptService.generatePrompt` 拼接严格约束模板，LLM 只基于参考资料回答，无相关信息时回答"不了解"
+- **LLM 生成**：通过策略模式透明调用当前 Provider（Qwen / OpenAI / Ollama / Mock）的 `generate()` 方法
+- **问答接口**：`POST /chat/ask`，180 秒超时，返回 `{ answer, sources }`
+
+### 新增环境变量
+
+每个 Provider 新增对话模型配置（已在 `.env.example` 中补充），有默认值可省略：
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `QWEN_CHAT_MODEL` | `qwen-plus` | Qwen 对话生成模型 |
+| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | OpenAI 对话生成模型 |
+| `OLLAMA_CHAT_MODEL` | `qwen2.5:7b-instruct` | Ollama 对话生成模型 |
 
 ## 本地启动
 
@@ -266,6 +287,56 @@ curl -X POST http://localhost:3300/upload-files \
 ```
 
 ## 本地开发
+### POST /chat/ask
+
+请求体：
+
+```json
+{
+  "question": "什么是 RAG？",
+  "topK": 3,
+  "threshold": 0.5
+}
+```
+
+- `question`：必填，自然语言问题
+- `topK`：可选（1-10），检索片段数量，默认 `3`
+- `threshold`：可选（0.0-1.0），相似度阈值，默认 `0.5`
+
+响应体（示例）：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "answer": "RAG（检索增强生成）是一种将向量检索与大语言模型结合的技术...",
+    "sources": [
+      {
+        "chunkId": "1",
+        "source": "intro.pdf",
+        "score": 0.87,
+        "chunkIndex": 0
+      }
+    ]
+  },
+  "msg": "success"
+}
+```
+
+知识库中无相关内容时：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "answer": "不了解",
+    "sources": []
+  },
+  "msg": "success"
+}
+```
+
+## 本地开发
 
 ### 快速开始
 
@@ -319,6 +390,10 @@ curl -X POST http://localhost:3300/upload-files \
   -F "files=@./samples/demo.docx" \
   -F "chunkSize=400" \
   -F "chunkOverlap=80"
+
+curl -X POST http://localhost:3300/chat/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "什么是 RAG？"}'
 ```
 
 预期响应：

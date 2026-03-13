@@ -10,6 +10,7 @@ export class QwenLlmProvider extends BaseLlmProvider {
     'https://dashscope.aliyuncs.com/compatible-mode/v1';
   private static readonly DEFAULT_EMBEDDING_MODEL = 'text-embedding-v4';
   private static readonly DEFAULT_RERANK_MODEL = 'gte-rerank';
+  private static readonly DEFAULT_CHAT_MODEL = 'qwen-plus';
 
   private static readonly OPENAI_COMPATIBLE_EMBEDDING_MODELS = [
     'text-embedding-v4',
@@ -137,6 +138,40 @@ export class QwenLlmProvider extends BaseLlmProvider {
     }));
   }
 
+  async generate(prompt: string): Promise<string> {
+    this.validateText(prompt);
+
+    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.config.chatModel,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0,
+      }),
+      signal: AbortSignal.timeout(this.config.timeout),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      this.handleHttpError(this.getName(), response.status, details);
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const answer = data.choices?.[0]?.message?.content?.trim();
+
+    if (!answer) {
+      throw new Error('Qwen 生成返回为空');
+    }
+
+    return answer;
+  }
+
   protected mergeWithDefaults(
     config: LlmProviderConfig,
   ): Required<LlmProviderConfig> {
@@ -146,6 +181,7 @@ export class QwenLlmProvider extends BaseLlmProvider {
       embeddingModel:
         config.embeddingModel || QwenLlmProvider.DEFAULT_EMBEDDING_MODEL,
       rerankModel: config.rerankModel || QwenLlmProvider.DEFAULT_RERANK_MODEL,
+      chatModel: config.chatModel || QwenLlmProvider.DEFAULT_CHAT_MODEL,
       timeout: config.timeout || BaseLlmProvider.DEFAULT_TIMEOUT,
     };
   }

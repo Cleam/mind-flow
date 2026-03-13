@@ -96,7 +96,7 @@ src/
 - 文档内容清洗 -> 切片 -> 入向量库
 - 切片考虑最佳实践以便提升检索的准确度
 
-### 🔍 阶段 3：实现 RAG 检索与单轮问答（检索链路）
+### 🔍 阶段 3：实现 RAG 检索与单轮问答（检索链路）✅ 已完成（2026-03-13）
 
 **目标**：实现向量搜索，拼接 Prompt，让 LLM 根据本地知识库回答。
 
@@ -110,6 +110,18 @@ src/
 > 4. **问答接口**：实现 `ChatController.ask(question)` 接收自然语言查询，返回 `{ answer: string, citations: Array<{chunkId, source, score}> }` 结构。
 > 5. **工程约束**：使用注入的 `EmbeddingService`、`VectorService`、`RerankService` 无直接耦合；Prompt 模板统一管理避免硬编码；支持切换不同 LLM Provider。n> 6. **验收标准**：`pnpm build`、`pnpm test`、`pnpm test:e2e` 通过；通过 curl 提问得到含 `answer` 和 `citations` 的完整响应；向量检索能过滤出相关片段。
 ```
+
+**当前进度（2026-03-13）**：✅ 全部完成
+
+- **LLM 生成能力**：`LlmProvider` 接口新增 `generate(prompt)` 方法；Qwen / OpenAI / Ollama / Mock 四个 Provider 均已实现；`LlmProviderFactory` 透传 `*_CHAT_MODEL` 环境变量
+- **向量检索**：`VectorService.search(embedding, limit, threshold)` 使用 pgvector `<=>` 余弦距离，返回 `SearchChunkResult[]`（含 id / content / metadata / score）
+- **Prompt 引擎**：`PromptService.generatePrompt` 严格约束模板，无内容时注入 `（无）` 触发 LLM 降级回答
+- **问答编排**：`ChatService.ask` 完整链路：embed → search → tryRerank（失败降级）→ generatePrompt → generate
+- **问答接口**：`POST /chat/ask`（180s 超时），返回 `{ answer, sources: [{chunkId, source, score, chunkIndex}] }`
+- **无结果处理**：向量检索为空时直接返回 `answer='不了解', sources=[]`（code=0，非报错）
+- **新文件**：`src/chat/`（`chat.module.ts` / `chat.service.ts` / `chat.controller.ts` / `prompt.service.ts` / `dto/*.ts`）
+- **测试覆盖**：`chat.service.spec.ts`、`prompt.service.spec.ts`、`vector.service.spec.ts`、`test/chat.e2e-spec.ts`
+- **验收结果**：`pnpm build` ✅ / `pnpm test` ✅ / `pnpm test:e2e` ✅ / `pnpm lint` ✅（0 errors）
 
 ---
 

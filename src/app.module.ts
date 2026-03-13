@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { VectorModule } from './vector/vector.module.js';
 import { RerankModule } from './rerank/rerank.module.js';
 import { LoggerModule } from './logger/logger.module.js';
+import { ChatModule } from './chat/chat.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { LoggerModule } from './logger/logger.module.js';
     VectorModule,
     IngestModule,
     RerankModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

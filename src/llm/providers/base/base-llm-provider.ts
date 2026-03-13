@@ -25,6 +25,7 @@ export abstract class BaseLlmProvider implements LlmProvider {
     query: string,
     documents: string[],
   ): Promise<Array<{ index: number; score: number; document: string }>>;
+  abstract generate(prompt: string): Promise<string>;
 
   /**
    * 默认批量向量化实现（串行调用 embed）

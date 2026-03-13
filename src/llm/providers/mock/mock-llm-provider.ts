@@ -38,6 +38,16 @@ export class MockLlmProvider extends BaseLlmProvider {
     );
   }
 
+  generate(prompt: string): Promise<string> {
+    this.validateText(prompt);
+
+    if (prompt.includes('【参考资料】') && prompt.includes('（无）')) {
+      return Promise.resolve('不了解');
+    }
+
+    return Promise.resolve('根据参考资料，这是一个 Mock 回答。');
+  }
+
   isAvailable(): Promise<boolean> {
     return Promise.resolve(true); // Mock 总是可用
   }
@@ -50,6 +60,7 @@ export class MockLlmProvider extends BaseLlmProvider {
       baseUrl: config.baseUrl || 'http://localhost:0',
       embeddingModel: config.embeddingModel || 'mock-embedding',
       rerankModel: config.rerankModel || 'mock-rerank',
+      chatModel: config.chatModel || 'mock-chat',
       timeout: config.timeout || BaseLlmProvider.DEFAULT_TIMEOUT,
     };
   }

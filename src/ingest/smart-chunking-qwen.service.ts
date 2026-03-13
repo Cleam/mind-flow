@@ -19,8 +19,8 @@ export enum ContentType {
 /** 预设配置：针对 text-embedding-v4 @ 1024维优化 */
 export const DEFAULT_CHUNK_CONFIGS: Record<ContentType, ChunkConfig> = {
   [ContentType.DEFAULT]: { chunkTokens: 320, overlap: 40, minChunkChars: 30 },
-  [ContentType.CODE]: { chunkTokens: 512, overlap: 64, minChunkChars: 50 }, // 代码需更大窗口
-  [ContentType.SHORT]: { chunkTokens: 192, overlap: 24, minChunkChars: 20 },
+  [ContentType.CODE]: { chunkTokens: 512, overlap: 64, minChunkChars: 20 }, // 代码块可能较短，避免被误过滤
+  [ContentType.SHORT]: { chunkTokens: 24, overlap: 16, minChunkChars: 20 },
   [ContentType.LONG_DOC]: { chunkTokens: 384, overlap: 48, minChunkChars: 40 },
 };
 

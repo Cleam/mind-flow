@@ -32,6 +32,7 @@ export class LlmProviderFactory {
             'QWEN_EMBEDDING_MODEL',
           ),
           rerankModel: this.configService.get<string>('QWEN_RERANK_MODEL'),
+          chatModel: this.configService.get<string>('QWEN_CHAT_MODEL'),
         });
 
       case 'openai':
@@ -42,6 +43,7 @@ export class LlmProviderFactory {
             'OPENAI_EMBEDDING_MODEL',
           ),
           rerankModel: this.configService.get<string>('OPENAI_RERANK_MODEL'),
+          chatModel: this.configService.get<string>('OPENAI_CHAT_MODEL'),
         });
 
       case 'ollama':
@@ -51,6 +53,7 @@ export class LlmProviderFactory {
             'OLLAMA_EMBEDDING_MODEL',
           ),
           rerankModel: this.configService.get<string>('OLLAMA_RERANK_MODEL'),
+          chatModel: this.configService.get<string>('OLLAMA_CHAT_MODEL'),
         });
 
       case 'mock':
