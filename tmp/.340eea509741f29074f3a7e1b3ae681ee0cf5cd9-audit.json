@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/lee/Documents/code/study/mind-flow/tmp/.340eea509741f29074f3a7e1b3ae681ee0cf5cd9-audit.json",
+    "files": [
+        {
+            "date": 1773373312629,
+            "name": "/Users/lee/Documents/code/study/mind-flow/tmp/error-2026-03-13.log",
+            "hash": "fd30a7d658e6e8c41f2cedd8e92445a3094591047ae8c06d05fb1d7493cd8fdc"
+        }
+    ],
+    "hashType": "sha256"
+}

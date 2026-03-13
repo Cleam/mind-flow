@@ -11,6 +11,7 @@ import { TestIngestDto } from './dto/test-ingest.dto.js';
 import { UploadDocumentsDto } from './dto/upload-documents.dto.js';
 import { UploadFilesOptionsDto } from './dto/upload-files-options.dto.js';
 import { IngestService, UploadDocumentsResult } from './ingest.service.js';
+import { RequestTimeout } from '../common/decorators/request-timeout.decorator.js';
 
 /** 允许上传的 MIME 类型（浏览器对 .md 可能发 text/plain，一并接受） */
 const ALLOWED_MIME_REGEX =
@@ -45,6 +46,7 @@ export class IngestController {
    * 可选 form 字段：chunkSize（默认 400）、chunkOverlap（默认 80）
    */
   @Post('upload-files')
+  @RequestTimeout(180_000)
   @UseInterceptors(FilesInterceptor('files', 10))
   async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],

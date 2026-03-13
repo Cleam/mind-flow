@@ -7,6 +7,32 @@
 - `POST /upload`：接收 JSON 文本文档数组，适合程序内部或手工传文本。
 - `POST /upload-files`：接收 multipart 文件，支持 `pdf/docx/md/txt` 解析后清洗、智能切片并入向量库。
 
+## 统一响应约定
+
+所有 HTTP JSON 接口都返回统一结构：
+
+```json
+{
+  "code": 0,
+  "data": {},
+  "msg": "success"
+}
+```
+
+- 成功：`code = 0`，`data` 为真实业务数据，`msg = "success"`
+- 失败：`code != 0`，`data = null`，`msg` 为错误信息
+- 前端只根据 `code` 判断成功/失败，不依赖 HTTP 状态码
+
+常见错误码：
+
+- `10001`：参数校验失败（`VALIDATION_FAILED`）
+- `10002`：请求参数错误（`BAD_REQUEST`）
+- `10003`：未授权（`UNAUTHORIZED`）
+- `10004`：禁止访问（`FORBIDDEN`）
+- `10005`：资源不存在（`NOT_FOUND`）
+- `10006`：请求超时（`REQUEST_TIME_OUT`）
+- `10008`：服务器内部错误（`INTERNAL_ERROR`）
+
 ## 阶段 1 已实现能力
 
 - `DocumentChunk` 数据模型：`id`、`content`、`metadata(Json)`、`embedding(vector(1536))`
@@ -93,7 +119,11 @@ pnpm start:dev
 
 ```json
 {
-  "insertedCount": 2
+  "code": 0,
+  "data": {
+    "insertedCount": 2
+  },
+  "msg": "success"
 }
 ```
 
@@ -121,12 +151,16 @@ pnpm start:dev
 
 ```json
 {
-  "documentCount": 2,
-  "totalChunks": 3,
-  "savedCount": 3,
-  "failedCount": 0,
-  "status": "success",
-  "failures": []
+  "code": 0,
+  "data": {
+    "documentCount": 2,
+    "totalChunks": 3,
+    "savedCount": 3,
+    "failedCount": 0,
+    "status": "success",
+    "failures": []
+  },
+  "msg": "success"
 }
 ```
 
@@ -154,12 +188,16 @@ curl -X POST http://localhost:3300/upload-files \
 
 ```json
 {
-  "documentCount": 2,
-  "totalChunks": 6,
-  "savedCount": 6,
-  "failedCount": 0,
-  "status": "success",
-  "failures": []
+  "code": 0,
+  "data": {
+    "documentCount": 2,
+    "totalChunks": 6,
+    "savedCount": 6,
+    "failedCount": 0,
+    "status": "success",
+    "failures": []
+  },
+  "msg": "success"
 }
 ```
 
@@ -167,19 +205,23 @@ curl -X POST http://localhost:3300/upload-files \
 
 ```json
 {
-  "documentCount": 2,
-  "totalChunks": 4,
-  "savedCount": 3,
-  "failedCount": 1,
-  "status": "partial",
-  "failures": [
-    {
-      "documentIndex": 1,
-      "chunkIndex": -1,
-      "source": "broken.pdf",
-      "reason": "PDF 解析失败: ..."
-    }
-  ]
+  "code": 0,
+  "data": {
+    "documentCount": 2,
+    "totalChunks": 4,
+    "savedCount": 3,
+    "failedCount": 1,
+    "status": "partial",
+    "failures": [
+      {
+        "documentIndex": 1,
+        "chunkIndex": -1,
+        "source": "broken.pdf",
+        "reason": "PDF 解析失败: ..."
+      }
+    ]
+  },
+  "msg": "success"
 }
 ```
 
@@ -203,19 +245,23 @@ curl -X POST http://localhost:3300/upload-files \
 
 ```json
 {
-  "query": "如何使用 NestJS？",
-  "results": [
-    {
-      "index": 0,
-      "score": 0.95,
-      "document": "NestJS 是一个用于构建高效可扩展 Node.js 服务端应用的框架。"
-    },
-    {
-      "index": 2,
-      "score": 0.42,
-      "document": "PostgreSQL 是一个强大的开源对象关系数据库系统。"
-    }
-  ]
+  "code": 0,
+  "data": {
+    "query": "如何使用 NestJS？",
+    "results": [
+      {
+        "index": 0,
+        "score": 0.95,
+        "document": "NestJS 是一个用于构建高效可扩展 Node.js 服务端应用的框架。"
+      },
+      {
+        "index": 2,
+        "score": 0.42,
+        "document": "PostgreSQL 是一个强大的开源对象关系数据库系统。"
+      }
+    ]
+  },
+  "msg": "success"
 }
 ```
 
@@ -278,18 +324,26 @@ curl -X POST http://localhost:3300/upload-files \
 预期响应：
 
 ```json
-{ "insertedCount": 2 }
+{
+  "code": 0,
+  "data": { "insertedCount": 2 },
+  "msg": "success"
+}
 ```
 
 文件上传接口的预期响应结构与 `/upload` 一致：
 
 ```json
 {
-  "documentCount": 2,
-  "totalChunks": 6,
-  "savedCount": 6,
-  "failedCount": 0,
-  "status": "success",
-  "failures": []
+  "code": 0,
+  "data": {
+    "documentCount": 2,
+    "totalChunks": 6,
+    "savedCount": 6,
+    "failedCount": 0,
+    "status": "success",
+    "failures": []
+  },
+  "msg": "success"
 }
 ```

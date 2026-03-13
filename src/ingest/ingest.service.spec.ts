@@ -15,8 +15,10 @@ describe('IngestService', () => {
   ): IngestService {
     return new IngestService(
       { saveChunk } as never,
-      { embed: (): Promise<number[]> => Promise.resolve(embeddingVector) } as never,
-      { parseMany: async () => ({ parsed: [], failures: [] }) } as never,
+      {
+        embed: (): Promise<number[]> => Promise.resolve(embeddingVector),
+      } as never,
+      { parseMany: () => ({ parsed: [], failures: [] }) } as never,
       new TextCleanerService(),
       new SmartChunkingService(),
     );
@@ -36,7 +38,9 @@ describe('IngestService', () => {
 
   it('splitText should throw when overlap is invalid', () => {
     const service = makeService();
-    expect(() => service.splitText('abcdef', 5, 5)).toThrow(BadRequestException);
+    expect(() => service.splitText('abcdef', 5, 5)).toThrow(
+      BadRequestException,
+    );
   });
 
   it('processDocuments should continue when single chunk fails', async () => {
@@ -74,7 +78,9 @@ describe('IngestService', () => {
     const goodFile = {
       originalname: 'a.txt',
       mimetype: 'text/plain',
-      buffer: Buffer.from('这是测试内容，足够长以便生成至少一个有效的文本块用于向量化存储。'),
+      buffer: Buffer.from(
+        '这是测试内容，足够长以便生成至少一个有效的文本块用于向量化存储。',
+      ),
       fieldname: 'files',
       encoding: '7bit',
       size: 30,
@@ -86,19 +92,23 @@ describe('IngestService', () => {
 
     const service = new IngestService(
       { saveChunk: () => Promise.resolve() } as never,
-      { embed: (): Promise<number[]> => Promise.resolve(embeddingVector) } as never,
       {
-        parseMany: async (files: Express.Multer.File[]) => ({
+        embed: (): Promise<number[]> => Promise.resolve(embeddingVector),
+      } as never,
+      {
+        parseMany: (files: Express.Multer.File[]) => ({
           parsed: [
             {
               fileIndex: 0,
-              source: files[0]!.originalname,
-              content: files[0]!.buffer.toString('utf-8'),
+              source: files[0].originalname,
+              content: files[0].buffer.toString('utf-8'),
               format: 'txt' as const,
               parseWarnings: [],
             },
           ],
-          failures: [{ fileIndex: 1, source: 'bad.pdf', reason: 'PDF 解析失败' }],
+          failures: [
+            { fileIndex: 1, source: 'bad.pdf', reason: 'PDF 解析失败' },
+          ],
         }),
       } as never,
       new TextCleanerService(),

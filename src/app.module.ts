@@ -6,11 +6,13 @@ import { IngestModule } from './ingest/ingest.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { VectorModule } from './vector/vector.module.js';
 import { RerankModule } from './rerank/rerank.module.js';
+import { LoggerModule } from './logger/logger.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    LoggerModule,
     VectorModule,
     IngestModule,
     RerankModule,
