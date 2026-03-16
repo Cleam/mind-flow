@@ -14,6 +14,22 @@ import { OllamaLlmProvider } from './providers/ollama/ollama-llm-provider.js';
 export class LlmProviderFactory {
   constructor(private readonly configService: ConfigService) {}
 
+  private getTimeout(...keys: string[]): number | undefined {
+    for (const key of keys) {
+      const raw = this.configService.get<string>(key);
+      if (!raw) {
+        continue;
+      }
+
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    return undefined;
+  }
+
   /**
    * 创建 Provider 实例
    */
@@ -33,6 +49,7 @@ export class LlmProviderFactory {
           ),
           rerankModel: this.configService.get<string>('QWEN_RERANK_MODEL'),
           chatModel: this.configService.get<string>('QWEN_CHAT_MODEL'),
+          timeout: this.getTimeout('QWEN_TIMEOUT', 'LLM_TIMEOUT'),
         });
 
       case 'openai':
@@ -44,6 +61,7 @@ export class LlmProviderFactory {
           ),
           rerankModel: this.configService.get<string>('OPENAI_RERANK_MODEL'),
           chatModel: this.configService.get<string>('OPENAI_CHAT_MODEL'),
+          timeout: this.getTimeout('OPENAI_TIMEOUT', 'LLM_TIMEOUT'),
         });
 
       case 'ollama':
@@ -54,6 +72,7 @@ export class LlmProviderFactory {
           ),
           rerankModel: this.configService.get<string>('OLLAMA_RERANK_MODEL'),
           chatModel: this.configService.get<string>('OLLAMA_CHAT_MODEL'),
+          timeout: this.getTimeout('OLLAMA_TIMEOUT', 'LLM_TIMEOUT'),
         });
 
       case 'mock':

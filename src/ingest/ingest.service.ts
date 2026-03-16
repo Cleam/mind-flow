@@ -30,6 +30,7 @@ export class IngestService {
   private static readonly EMBEDDING_DIMENSION = 1536;
   private static readonly DEFAULT_CHUNK_SIZE = 500;
   private static readonly DEFAULT_CHUNK_OVERLAP = 100;
+  private static readonly EMBEDDING_BATCH_SIZE = 16;
 
   constructor(
     private readonly vectorService: VectorService,
@@ -200,28 +201,76 @@ export class IngestService {
     let savedCount = 0;
     let failedCount = 0;
 
-    for (const [chunkIndex, chunk] of chunks.entries()) {
-      try {
-        const embedding = await this.embeddingService.embed(chunk);
-        await this.vectorService.saveChunk(
-          chunk,
-          {
-            source,
-            documentIndex,
-            chunkIndex,
-          },
-          embedding,
-        );
+    for (
+      let batchStart = 0;
+      batchStart < chunks.length;
+      batchStart += IngestService.EMBEDDING_BATCH_SIZE
+    ) {
+      const batchChunks = chunks.slice(
+        batchStart,
+        batchStart + IngestService.EMBEDDING_BATCH_SIZE,
+      );
 
-        savedCount += 1;
-      } catch (error: unknown) {
-        failedCount += 1;
-        failures.push({
-          documentIndex,
-          chunkIndex,
-          source,
-          reason: error instanceof Error ? error.message : '未知错误',
-        });
+      try {
+        const embeddings = await this.embeddingService.batchEmbed(batchChunks);
+
+        if (embeddings.length !== batchChunks.length) {
+          throw new Error('批量向量化返回数量与文本块数量不一致');
+        }
+
+        for (const [offset, chunk] of batchChunks.entries()) {
+          const chunkIndex = batchStart + offset;
+          const embedding = embeddings[offset];
+
+          try {
+            await this.vectorService.saveChunk(
+              chunk,
+              {
+                source,
+                documentIndex,
+                chunkIndex,
+              },
+              embedding,
+            );
+
+            savedCount += 1;
+          } catch (error: unknown) {
+            failedCount += 1;
+            failures.push({
+              documentIndex,
+              chunkIndex,
+              source,
+              reason: error instanceof Error ? error.message : '未知错误',
+            });
+          }
+        }
+      } catch {
+        // 批量向量化失败时，自动降级到逐条处理，避免整批丢失。
+        for (const [offset, chunk] of batchChunks.entries()) {
+          const chunkIndex = batchStart + offset;
+          try {
+            const embedding = await this.embeddingService.embed(chunk);
+            await this.vectorService.saveChunk(
+              chunk,
+              {
+                source,
+                documentIndex,
+                chunkIndex,
+              },
+              embedding,
+            );
+
+            savedCount += 1;
+          } catch (error: unknown) {
+            failedCount += 1;
+            failures.push({
+              documentIndex,
+              chunkIndex,
+              source,
+              reason: error instanceof Error ? error.message : '未知错误',
+            });
+          }
+        }
       }
     }
 

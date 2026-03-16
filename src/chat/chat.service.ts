@@ -4,6 +4,7 @@ import { EmbeddingService } from '../embedding/embedding.service.js';
 import { LlmProviderFactory } from '../llm/llm-provider.factory.js';
 import { RerankService } from '../rerank/rerank.service.js';
 import { VectorService } from '../vector/vector.service.js';
+import { AppLoggerService } from '../logger/logger.service.js';
 import { ChatAnswerDto } from './dto/chat-answer.dto.js';
 import { ChatSourceDto } from './dto/chat-source.dto.js';
 import { PromptService } from './prompt.service.js';
@@ -20,6 +21,7 @@ export class ChatService {
     private readonly vectorService: VectorService,
     private readonly rerankService: RerankService,
     private readonly promptService: PromptService,
+    private readonly logger: AppLoggerService,
     providerFactory: LlmProviderFactory,
   ) {
     this.provider = providerFactory.createProvider();
@@ -32,7 +34,16 @@ export class ChatService {
     let queryEmbedding: number[];
     try {
       queryEmbedding = await this.embeddingService.embed(body.question);
-    } catch {
+    } catch (error: unknown) {
+      this.logger.error('Chat ask embedding failed', {
+        provider: this.provider.getName(),
+        questionPreview: body.question.slice(0, 200),
+        questionLength: body.question.length,
+        topK,
+        threshold,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new BusinessException('INTERNAL_ERROR', '查询向量化失败');
     }
 
@@ -43,7 +54,17 @@ export class ChatService {
         topK,
         threshold,
       );
-    } catch {
+    } catch (error: unknown) {
+      this.logger.error('Chat ask vector search failed', {
+        provider: this.provider.getName(),
+        questionPreview: body.question.slice(0, 200),
+        questionLength: body.question.length,
+        topK,
+        threshold,
+        embeddingDim: queryEmbedding.length,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new BusinessException('INTERNAL_ERROR', '向量检索失败');
     }
 
@@ -67,7 +88,19 @@ export class ChatService {
     let answer = '不了解';
     try {
       answer = await this.provider.generate(prompt);
-    } catch {
+    } catch (error: unknown) {
+      this.logger.error('Chat ask generation failed', {
+        provider: this.provider.getName(),
+        questionPreview: body.question.slice(0, 200),
+        questionLength: body.question.length,
+        topK,
+        threshold,
+        retrievedCount: retrieved.length,
+        rerankedCount: rankedChunks.length,
+        promptLength: prompt.length,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new BusinessException('INTERNAL_ERROR', 'LLM 回答生成失败');
     }
 

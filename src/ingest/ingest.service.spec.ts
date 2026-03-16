@@ -17,6 +17,8 @@ describe('IngestService', () => {
       { saveChunk } as never,
       {
         embed: (): Promise<number[]> => Promise.resolve(embeddingVector),
+        batchEmbed: (texts: string[]): Promise<number[][]> =>
+          Promise.resolve(texts.map(() => embeddingVector)),
       } as never,
       { parseMany: () => ({ parsed: [], failures: [] }) } as never,
       new TextCleanerService(),
@@ -94,6 +96,8 @@ describe('IngestService', () => {
       { saveChunk: () => Promise.resolve() } as never,
       {
         embed: (): Promise<number[]> => Promise.resolve(embeddingVector),
+        batchEmbed: (texts: string[]): Promise<number[][]> =>
+          Promise.resolve(texts.map(() => embeddingVector)),
       } as never,
       {
         parseMany: (files: Express.Multer.File[]) => ({

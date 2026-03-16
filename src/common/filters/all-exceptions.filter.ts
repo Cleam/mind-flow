@@ -19,16 +19,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const requestId = this.pickRequestId(request);
+    const duration = this.pickDuration(request);
 
     const status = this.getStatus(exception);
     const { key, msg } = this.mapException(exception, status);
     const biz = BIZ_ERRORS[key] ?? BIZ_ERRORS[FALLBACK_BIZ_KEY];
 
     this.logger.error('Unhandled exception', {
+      requestId,
       method: request.method,
       path: request.originalUrl,
       ip: request.ip,
       userAgent: request.headers['user-agent'] ?? '',
+      duration,
       responseStatus: HttpStatus.OK,
       originalStatus: status,
       bizCode: biz.code,
@@ -41,6 +45,35 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
 
     response.status(HttpStatus.OK).json(errorResponse(biz.code, msg));
+  }
+
+  private pickRequestId(request: Request): string {
+    const byContext = (request as Request & { requestId?: string }).requestId;
+    if (typeof byContext === 'string' && byContext.trim()) {
+      return byContext;
+    }
+
+    const fromHeader = request.headers['x-request-id'];
+    if (typeof fromHeader === 'string' && fromHeader.trim()) {
+      return fromHeader.trim();
+    }
+
+    if (Array.isArray(fromHeader) && fromHeader[0]?.trim()) {
+      return fromHeader[0].trim();
+    }
+
+    return 'n/a';
+  }
+
+  private pickDuration(request: Request): number | null {
+    const startedAt =
+      (request as Request & { requestStartAt?: number }).requestStartAt ?? null;
+
+    if (!startedAt || !Number.isFinite(startedAt)) {
+      return null;
+    }
+
+    return Date.now() - startedAt;
   }
 
   private getStatus(exception: unknown): HttpStatus {

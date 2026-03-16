@@ -74,6 +74,7 @@ describe('ChatService', () => {
       vectorService as never,
       rerankService as never,
       new PromptService(),
+      { error: () => undefined } as never,
       providerFactory,
     );
   }

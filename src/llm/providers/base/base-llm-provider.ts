@@ -10,7 +10,7 @@ import { LlmProvider, LlmProviderConfig } from './llm-provider.interface.js';
  */
 export abstract class BaseLlmProvider implements LlmProvider {
   protected static readonly EMBEDDING_DIMENSION = 1536;
-  protected static readonly DEFAULT_TIMEOUT = 30000;
+  protected static readonly DEFAULT_TIMEOUT = 120000;
 
   protected readonly config: Required<LlmProviderConfig>;
 

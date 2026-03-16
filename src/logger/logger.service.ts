@@ -28,7 +28,7 @@ export class AppLoggerService implements LoggerService {
       transports: [
         new DailyRotateFile({
           dirname: logDir,
-          filename: 'application-%DATE%.log',
+          filename: 'app-%DATE%.log',
           datePattern: 'YYYY-MM-DD',
           maxFiles: '14d',
           zippedArchive: false,

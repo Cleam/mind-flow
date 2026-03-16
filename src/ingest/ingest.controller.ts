@@ -20,6 +20,9 @@ const ALLOWED_MIME_REGEX =
 /** 单文件大小上限：20 MB */
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
+/** 文件上传入库可能耗时较长，单独放宽超时 */
+const UPLOAD_FILES_TIMEOUT_MS = 600_000;
+
 @Controller()
 export class IngestController {
   constructor(private readonly ingestService: IngestService) {}
@@ -46,7 +49,7 @@ export class IngestController {
    * 可选 form 字段：chunkSize（默认 400）、chunkOverlap（默认 80）
    */
   @Post('upload-files')
-  @RequestTimeout(180_000)
+  @RequestTimeout(UPLOAD_FILES_TIMEOUT_MS)
   @UseInterceptors(FilesInterceptor('files', 10))
   async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],
