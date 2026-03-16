@@ -134,7 +134,7 @@ src/
 > **任务**：为 RAG 系统增加"对话记忆"与"流式体验"，支持多轮连贯对话。
 >
 > 1. **对话历史存储**：在 `schema.prisma` 新增 `ChatMessage` 模型，字段包括 `id`、`sessionId`、`role`（'user'|'assistant'）、`content`、`createdAt`；建立 `(sessionId, createdAt)` 复合索引支持快速查询。
-> 2. **会话管理**：实现 `ChatService.getHistory(sessionId, limit=10)` 获取当前会话历史；实现 `ChatService.saveMessage(sessionId, role, content)` 持久化对话。
+> 2. **会话管理**：实现 `ChatService.getHistory(sessionId, limit=10)` 获取当前会话历史（需要支持浏览器滚动分页）；实现 `ChatService.saveMessage(sessionId, role, content)` 持久化对话。
 > 3. **问题增强与重写**：实现 `QueryRewriteService.rewrite(currentQuestion, history)` 方法，调用 LLM 将当前问题结合最近 3 轮对话上下文改写为独立的搜索查询词，避免"代词歧义"；返回改写后的查询。
 > 4. **流式输出 (SSE)**：改造 `ChatController.askWithHistory(sessionId, question)` 为 `@Sse` 端点，令其返回 `Observable<MessageEvent>`；分别流式发送"检索开始 -> 检索完成 -> LLM 生成中 -> 完全回答" 等消息事件。
 > 5. **工程约束**：流式 LLM 调用需支持中断与超时；历史记录分页避免单次加载过大；确保并发多 session 不互相污染。
