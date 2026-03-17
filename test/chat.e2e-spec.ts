@@ -29,6 +29,7 @@ describe('ChatController (e2e)', () => {
         sources: Array<{ chunkId: string; source: string; score: number }>;
       }>
     >(),
+    createSession: jest.fn(),
     getHistory: jest.fn(),
     askWithHistoryStream: jest.fn(),
   };
@@ -47,6 +48,10 @@ describe('ChatController (e2e)', () => {
     chatServiceMock.ask.mockResolvedValue({
       answer: '根据资料，RAG 是检索增强生成。',
       sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
+    });
+    chatServiceMock.createSession.mockReturnValue({
+      sessionId: 'sess_20260317_abc123',
+      createdAt: '2026-03-17T00:00:00.000Z',
     });
     chatServiceMock.getHistory.mockResolvedValue({
       sessionId: 's1',
@@ -128,6 +133,21 @@ describe('ChatController (e2e)', () => {
         data: {
           answer: '根据资料，RAG 是检索增强生成。',
           sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
+        },
+        msg: 'success',
+      });
+  });
+
+  it('/chat/sessions (POST) should create a new session', async () => {
+    await request(getHttpServer())
+      .post('/chat/sessions')
+      .send({})
+      .expect(200)
+      .expect({
+        code: 0,
+        data: {
+          sessionId: 'sess_20260317_abc123',
+          createdAt: '2026-03-17T00:00:00.000Z',
         },
         msg: 'success',
       });

@@ -1,4 +1,5 @@
 import { Injectable, type MessageEvent } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { Observable, type Subscriber } from 'rxjs';
 import { BusinessException } from '../common/exceptions/business.exception.js';
 import { EmbeddingService } from '../embedding/embedding.service.js';
@@ -9,6 +10,7 @@ import { AppLoggerService } from '../logger/logger.service.js';
 import { ChatAnswerDto } from './dto/chat-answer.dto.js';
 import { ChatHistoryItemDto } from './dto/chat-history-item.dto.js';
 import { ChatHistoryResponseDto } from './dto/chat-history-response.dto.js';
+import { ChatSessionDto } from './dto/chat-session.dto.js';
 import { ChatSourceDto } from './dto/chat-source.dto.js';
 import { ConversationService } from './conversation.service.js';
 import { PromptService } from './prompt.service.js';
@@ -40,6 +42,16 @@ export class ChatService {
     const topK = body.topK ?? 3;
     const threshold = body.threshold ?? 0.5;
     return this.askInternal(body.question, body.question, topK, threshold);
+  }
+
+  createSession(): ChatSessionDto {
+    const createdAt = new Date().toISOString();
+    const sessionId = `sess_${createdAt.slice(0, 10).replace(/-/g, '')}_${randomUUID().replace(/-/g, '')}`;
+
+    return new ChatSessionDto({
+      sessionId,
+      createdAt,
+    });
   }
 
   async askWithHistory(body: AskWithSessionDto): Promise<ChatAnswerDto> {

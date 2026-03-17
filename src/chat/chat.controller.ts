@@ -21,6 +21,7 @@ import { AskWithSessionDto } from './dto/ask-with-session.dto.js';
 import { ChatAnswerDto } from './dto/chat-answer.dto.js';
 import { ChatHistoryQueryDto } from './dto/chat-history-query.dto.js';
 import { ChatHistoryResponseDto } from './dto/chat-history-response.dto.js';
+import { ChatSessionDto } from './dto/chat-session.dto.js';
 import { StreamBodyDto } from './dto/stream-body.dto.js';
 import { StreamQueryDto } from './dto/stream-query.dto.js';
 import { ChatService } from './chat.service.js';
@@ -33,6 +34,12 @@ export class ChatController {
   @RequestTimeout(180_000)
   async ask(@Body() body: AskDto): Promise<ChatAnswerDto> {
     return this.chatService.ask(body);
+  }
+
+  @Post('sessions')
+  @RequestTimeout(30_000)
+  createSession(): ChatSessionDto {
+    return this.chatService.createSession();
   }
 
   @Get('history')
