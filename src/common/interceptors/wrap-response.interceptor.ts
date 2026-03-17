@@ -50,6 +50,21 @@ export class WrapResponseInterceptor implements NestInterceptor {
       return true;
     }
 
+    const httpContext = context.switchToHttp();
+    const getRequest = (
+      httpContext as {
+        getRequest?: () => {
+          headers?: Record<string, string | string[] | undefined>;
+        };
+      }
+    ).getRequest;
+    const request = typeof getRequest === 'function' ? getRequest() : undefined;
+    const accept = request?.headers?.accept;
+    const acceptValue = Array.isArray(accept) ? accept.join(',') : accept || '';
+    if (acceptValue.includes('text/event-stream')) {
+      return true;
+    }
+
     return this.reflector.getAllAndOverride<boolean>(
       SKIP_WRAP_RESPONSE_METADATA_KEY,
       [context.getHandler(), context.getClass()],

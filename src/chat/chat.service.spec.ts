@@ -36,6 +36,10 @@ describe('ChatService', () => {
       batchEmbed: () => Promise.resolve([validEmbedding]),
       rerank: () => Promise.resolve([]),
       generate: () => Promise.resolve(options?.generatedAnswer ?? '生成答案'),
+      // eslint-disable-next-line @typescript-eslint/require-await
+      generateStream: async function* () {
+        yield options?.generatedAnswer ?? '生成答案';
+      },
       isAvailable: () => Promise.resolve(true),
     };
 
@@ -69,11 +73,22 @@ describe('ChatService', () => {
       },
     };
 
+    const conversationService = {
+      getHistory: () => Promise.resolve([]),
+      saveMessage: () => Promise.resolve(),
+    };
+
+    const queryRewriteService = {
+      rewrite: (_question: string) => Promise.resolve(_question),
+    };
+
     return new ChatService(
       embeddingService as never,
       vectorService as never,
       rerankService as never,
       new PromptService(),
+      conversationService as never,
+      queryRewriteService as never,
       { error: () => undefined } as never,
       providerFactory,
     );

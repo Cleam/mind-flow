@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ChatRole {
+  user
+  assistant
+}
+
 model DocumentChunks {
   id        BigInt                @id @default(autoincrement())
   content   String
@@ -15,4 +20,15 @@ model DocumentChunks {
   createdAt DateTime              @default(now())
 
   @@map("document_chunks")
+}
+
+model ChatMessage {
+  id        BigInt   @id @default(autoincrement())
+  sessionId String
+  role      ChatRole
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
 }

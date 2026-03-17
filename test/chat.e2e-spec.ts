@@ -7,6 +7,7 @@ import {
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import { Reflector } from '@nestjs/core';
+import { of } from 'rxjs';
 import { AppModule } from '../src/app.module.js';
 import { BIZ_ERRORS } from '../src/common/errors/biz-errors.js';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter.js';
@@ -28,6 +29,8 @@ describe('ChatController (e2e)', () => {
         sources: Array<{ chunkId: string; source: string; score: number }>;
       }>
     >(),
+    getHistory: jest.fn(),
+    askWithHistoryStream: jest.fn(),
   };
 
   const loggerMock = {
@@ -45,6 +48,33 @@ describe('ChatController (e2e)', () => {
       answer: '根据资料，RAG 是检索增强生成。',
       sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
     });
+    chatServiceMock.getHistory.mockResolvedValue({
+      sessionId: 's1',
+      limit: 10,
+      offset: 0,
+      items: [
+        {
+          id: '1',
+          sessionId: 's1',
+          role: 'user',
+          content: '什么是 RAG？',
+          createdAt: '2026-03-17T00:00:00.000Z',
+        },
+      ],
+    });
+    chatServiceMock.askWithHistoryStream.mockReturnValue(
+      of(
+        { type: 'token', data: { token: '根据' } },
+        {
+          type: 'done',
+          data: {
+            answer: '根据资料，RAG 是检索增强生成。',
+            sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
+            rewriteQuery: 'RAG 是什么',
+          },
+        },
+      ),
+    );
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -148,5 +178,42 @@ describe('ChatController (e2e)', () => {
         data: null,
         msg: BIZ_ERRORS.REQUEST_TIME_OUT.msg,
       });
+  });
+
+  it('/chat/history (GET) should return paged history', async () => {
+    await request(getHttpServer())
+      .get('/chat/history')
+      .query({ sessionId: 's1', limit: 10, offset: 0 })
+      .expect(200)
+      .expect({
+        code: 0,
+        data: {
+          sessionId: 's1',
+          limit: 10,
+          offset: 0,
+          items: [
+            {
+              id: '1',
+              sessionId: 's1',
+              role: 'user',
+              content: '什么是 RAG？',
+              createdAt: '2026-03-17T00:00:00.000Z',
+            },
+          ],
+        },
+        msg: 'success',
+      });
+  });
+
+  it('/chat/stream (POST) should return sse data', async () => {
+    const response = await request(getHttpServer())
+      .post('/chat/stream')
+      .send({ sessionId: 's1', question: '什么是 RAG？' })
+      .expect(200);
+
+    const text = response.text;
+    expect(text).toContain('event: token');
+    expect(text).toContain('event: done');
+    expect(text).toContain('"answer":"根据资料，RAG 是检索增强生成。"');
   });
 });

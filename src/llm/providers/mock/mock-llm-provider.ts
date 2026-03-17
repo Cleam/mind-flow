@@ -48,6 +48,21 @@ export class MockLlmProvider extends BaseLlmProvider {
     return Promise.resolve('根据参考资料，这是一个 Mock 回答。');
   }
 
+  async *generateStream(
+    prompt: string,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<string> {
+    const answer = await this.generate(prompt);
+    const chunks = answer.match(/.{1,6}/g) || [answer];
+
+    for (const chunk of chunks) {
+      if (abortSignal?.aborted) {
+        return;
+      }
+      yield chunk;
+    }
+  }
+
   isAvailable(): Promise<boolean> {
     return Promise.resolve(true); // Mock 总是可用
   }

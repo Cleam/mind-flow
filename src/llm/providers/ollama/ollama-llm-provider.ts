@@ -112,6 +112,90 @@ export class OllamaLlmProvider extends BaseLlmProvider {
     return answer;
   }
 
+  async *generateStream(
+    prompt: string,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<string> {
+    this.validateText(prompt);
+
+    const response = await fetch(`${this.config.baseUrl}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.config.chatModel,
+        prompt,
+        stream: true,
+      }),
+      signal: abortSignal || AbortSignal.timeout(this.config.timeout),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      this.handleHttpError(this.getName(), response.status, details);
+    }
+
+    if (!response.body) {
+      throw new Error('Ollama 流式响应体为空');
+    }
+
+    const decoder = new TextDecoder();
+    const reader = response.body.getReader();
+    let buffer = '';
+
+    while (true) {
+      if (abortSignal?.aborted) {
+        return;
+      }
+
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const token = this.parseStreamToken(line);
+        if (token === null) {
+          continue;
+        }
+        yield token;
+      }
+    }
+
+    const tail = decoder.decode();
+    if (tail) {
+      const lines = `${buffer}${tail}`.split('\n');
+      for (const line of lines) {
+        const token = this.parseStreamToken(line);
+        if (token === null) {
+          continue;
+        }
+        yield token;
+      }
+    }
+  }
+
+  private parseStreamToken(line: string): string | null {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed) as {
+        response?: string;
+      };
+      return typeof parsed.response === 'string' ? parsed.response : null;
+    } catch {
+      return null;
+    }
+  }
+
   protected mergeWithDefaults(
     config: LlmProviderConfig,
   ): Required<LlmProviderConfig> {

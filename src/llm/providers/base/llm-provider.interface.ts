@@ -41,6 +41,16 @@ export interface LlmProvider {
   generate(prompt: string): Promise<string>;
 
   /**
+   * 流式文本生成
+   * @param prompt 完整提示词
+   * @param abortSignal 中断信号
+   */
+  generateStream(
+    prompt: string,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<string>;
+
+  /**
    * 检查 Provider 是否可用（API Key、网络等）
    */
   isAvailable(): Promise<boolean>;
