@@ -9,10 +9,12 @@ import {
 } from 'class-validator';
 
 export class ChatHistoryQueryDto {
+  /** 需要查询历史消息的会话 ID */
   @IsString()
   @MinLength(1)
   sessionId!: string;
 
+  /** 分页大小，范围 1-100 */
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -20,6 +22,7 @@ export class ChatHistoryQueryDto {
   @Max(100)
   limit?: number;
 
+  /** 分页偏移量，从 0 开始 */
   @IsOptional()
   @Type(() => Number)
   @IsInt()

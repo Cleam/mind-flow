@@ -27,20 +27,24 @@ class ChunkOptionsConstraint implements ValidatorConstraintInterface {
 }
 
 export class UploadDocumentsDto {
+  /** 批量上传的文档数组 */
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => UploadDocumentItemDto)
   documents!: UploadDocumentItemDto[];
 
+  /** 切片长度（字符数），默认 500 */
   @IsInt()
   @Min(1)
   chunkSize = 500;
 
+  /** 切片重叠长度（字符数），默认 100 */
   @IsInt()
   @Min(0)
   chunkOverlap = 100;
 
+  /** 触发跨字段校验：要求 chunkOverlap < chunkSize */
   @Validate(ChunkOptionsConstraint)
   readonly chunkOptionsCheck = true;
 }

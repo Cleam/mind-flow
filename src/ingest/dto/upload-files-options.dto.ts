@@ -36,6 +36,7 @@ export class UploadFilesOptionsDto {
   @Type(() => Number)
   chunkOverlap = 80;
 
+  /** 触发跨字段校验：要求 chunkOverlap < chunkSize */
   @Validate(FileUploadChunkOptionsConstraint)
   readonly chunkOptionsCheck = true;
 }

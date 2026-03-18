@@ -121,6 +121,8 @@ export class TestIngestDto {
 
 For multipart file upload options, use numeric form fields transformed via `class-transformer`, and validate `chunkOverlap < chunkSize` with a custom validator.
 
+- **DTO 参数注释要求**：DTO 中每个对外字段（请求参数与响应字段）都应添加简短中文注释，优先说明业务语义、取值范围与默认值（如有）。
+
 ### Type Checking & ESLint Balance
 
 1. **Always run type check and lint after code changes**: `pnpm -s tsc --noEmit -p tsconfig.json` and `pnpm lint` (or file-scoped `pnpm eslint <file>` during iteration).
@@ -257,6 +259,7 @@ When implementing new phases:
 - [ ] Service has `@Injectable()` decorator
 - [ ] Local imports include `.js` extension (e.g., `./foo.js` not `./foo`)
 - [ ] DTOs use class-validator decorators (`@IsString`, `@IsNumber`, etc.)
+- [ ] DTO public fields include concise Chinese parameter comments (meaning/range/default)
 - [ ] Multipart numeric fields use `@Type(() => Number)` when coming from form-data
 - [ ] Raw SQL uses Prisma template literals (not string interpolation)
 - [ ] Metadata always includes: `source`, `chunkIndex` (and `documentIndex` when relevant)

@@ -22,16 +22,20 @@ import { ChatService } from '../src/chat/chat.service.js';
 describe('ChatController (e2e)', () => {
   let app: INestApplication;
 
-  const chatServiceMock = {
-    ask: jest.fn<
-      () => Promise<{
-        answer: string;
-        sources: Array<{ chunkId: string; source: string; score: number }>;
-      }>
-    >(),
-    createSession: jest.fn(),
-    getHistory: jest.fn(),
-    askWithHistoryStream: jest.fn(),
+  type ChatServiceMock = {
+    ask: jest.MockedFunction<ChatService['ask']>;
+    createSession: jest.MockedFunction<ChatService['createSession']>;
+    getHistory: jest.MockedFunction<ChatService['getHistory']>;
+    askWithHistoryStream: jest.MockedFunction<
+      ChatService['askWithHistoryStream']
+    >;
+  };
+
+  const chatServiceMock: ChatServiceMock = {
+    ask: jest.fn<ChatService['ask']>(),
+    createSession: jest.fn<ChatService['createSession']>(),
+    getHistory: jest.fn<ChatService['getHistory']>(),
+    askWithHistoryStream: jest.fn<ChatService['askWithHistoryStream']>(),
   };
 
   const loggerMock = {
@@ -47,7 +51,7 @@ describe('ChatController (e2e)', () => {
 
     chatServiceMock.ask.mockResolvedValue({
       answer: '根据资料，RAG 是检索增强生成。',
-      sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
+      sources: [{ chunkId: '1', source: 'doc-a', score: 0.9, chunkIndex: 0 }],
     });
     chatServiceMock.createSession.mockReturnValue({
       sessionId: 'sess_20260317_abc123',
@@ -74,7 +78,9 @@ describe('ChatController (e2e)', () => {
           type: 'done',
           data: {
             answer: '根据资料，RAG 是检索增强生成。',
-            sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
+            sources: [
+              { chunkId: '1', source: 'doc-a', score: 0.9, chunkIndex: 0 },
+            ],
             rewriteQuery: 'RAG 是什么',
           },
         },
@@ -132,7 +138,9 @@ describe('ChatController (e2e)', () => {
         code: 0,
         data: {
           answer: '根据资料，RAG 是检索增强生成。',
-          sources: [{ chunkId: '1', source: 'doc-a', score: 0.9 }],
+          sources: [
+            { chunkId: '1', source: 'doc-a', score: 0.9, chunkIndex: 0 },
+          ],
         },
         msg: 'success',
       });
