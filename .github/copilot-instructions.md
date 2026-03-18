@@ -121,6 +121,37 @@ export class TestIngestDto {
 
 For multipart file upload options, use numeric form fields transformed via `class-transformer`, and validate `chunkOverlap < chunkSize` with a custom validator.
 
+### Type Checking & ESLint Balance
+
+1. **Always run type check and lint after code changes**: `pnpm -s tsc --noEmit -p tsconfig.json` and `pnpm lint` (or file-scoped `pnpm eslint <file>` during iteration).
+2. **Prefer Prisma generated types directly** (`ChatRole`, model fields, Prisma args) and avoid introducing extra delegate/wrapper interfaces only to satisfy lint rules.
+3. **Balance strictness and readability**:
+  - Keep `@typescript-eslint/no-unsafe-*` as **warning** level globally.
+  - For known tooling boundaries (Prisma generated client, external SDK unknown responses), allow **small local `eslint-disable-next-line`** with a short reason comment.
+  - Do not spread `eslint-disable` across large code blocks; keep it at the narrowest call boundary.
+4. **Do not trade maintainability for zero warnings**: business service code should remain straightforward and easy to understand.
+
+### Code Commenting (中文注释规范)
+
+1. **Use Simplified Chinese comments by default** for newly generated code in this repository.
+2. **Add necessary comments for logic understanding**, especially for:
+  - Non-trivial control flow (fallback, retry, degrade path)
+  - Boundary handling (validation, defaults, truncation, pagination)
+  - Infrastructure boundaries (Prisma raw SQL, external SDK response mapping, streaming)
+  - Why a workaround is needed (e.g., local lint disable at tooling boundary)
+3. **Comment quality requirements**:
+  - Explain “why/intent”, not obvious “what”.
+  - Keep comments concise and close to the related code block.
+  - Avoid redundant line-by-line narration and avoid stale TODO-style comments.
+4. **Function-level guidance**:
+  - For key service methods, add a short Chinese doc comment describing input, output, and side effects when not self-evident.
+5. **Readability first**:
+  - Do not introduce complex wrapper types only to silence lint.
+  - Prefer small local comments + minimal lint suppression over large structural complexity.
+6. **Comment coverage recommendation**:
+  - Public methods in core modules (`chat`, `ingest`, `vector`, `embedding`, `rerank`) should include a short Chinese doc comment by default.
+  - When changing existing complex logic, add or update comments together with the code change.
+
 ### File Ingestion Pipeline
 
 Current file ingestion path:
