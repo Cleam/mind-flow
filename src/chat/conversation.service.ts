@@ -50,7 +50,6 @@ export class ConversationService {
       take: safeLimit,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return rows.reverse().map((row) => ({
       id: row.id.toString(),
       sessionId: row.sessionId,
