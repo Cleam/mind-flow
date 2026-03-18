@@ -139,10 +139,12 @@ For multipart file upload options, use numeric form fields transformed via `clas
   - Boundary handling (validation, defaults, truncation, pagination)
   - Infrastructure boundaries (Prisma raw SQL, external SDK response mapping, streaming)
   - Why a workaround is needed (e.g., local lint disable at tooling boundary)
+  - Data-flow transformation points (DTO mapping, prompt assembly, ranking/threshold filtering)
 3. **Comment quality requirements**:
   - Explain “why/intent”, not obvious “what”.
   - Keep comments concise and close to the related code block.
   - Avoid redundant line-by-line narration and avoid stale TODO-style comments.
+  - For methods with multiple stages, include short stage comments near key branches/loops (not only method header comments).
 4. **Function-level guidance**:
   - For key service methods, add a short Chinese doc comment describing input, output, and side effects when not self-evident.
 5. **Readability first**:
@@ -151,6 +153,9 @@ For multipart file upload options, use numeric form fields transformed via `clas
 6. **Comment coverage recommendation**:
   - Public methods in core modules (`chat`, `ingest`, `vector`, `embedding`, `rerank`) should include a short Chinese doc comment by default.
   - When changing existing complex logic, add or update comments together with the code change.
+7. **Detailed-comment baseline**:
+  - In core workflow methods, ensure at least one explanatory comment for each critical step (e.g., input normalization, external call, fallback decision, output shaping).
+  - For streaming or async pipeline code, comment cancellation/cleanup behavior explicitly.
 
 ### File Ingestion Pipeline
 
