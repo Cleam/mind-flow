@@ -103,6 +103,8 @@
 
 ## 本地启动
 
+Prisma 迁移出现 drift/历史校验问题时，请先参考 [PRISMA_DRIFT_CHECKLIST.md](PRISMA_DRIFT_CHECKLIST.md)。
+
 1. 复制环境变量
 
 ```bash

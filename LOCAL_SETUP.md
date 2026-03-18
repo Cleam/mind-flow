@@ -103,6 +103,9 @@ OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
 
 ## troubleshooting
 
+**问题：`Prisma migration drift / migration was modified after it was applied`**
+- 解决：先按标准清单排查并优先走保数据修复流程，见 [PRISMA_DRIFT_CHECKLIST.md](PRISMA_DRIFT_CHECKLIST.md)
+
 **问题：`P1001: Can't reach database server`**
 - 解决：确保 Docker 容器已启动 `docker-compose up -d && sleep 10`
 

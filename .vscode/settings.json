@@ -17,6 +17,13 @@
     "/^node -e \"import\\('pdf-parse'\\)\\.then\\(\\(\\{PDFParse\\}\\)=>\\{const s=PDFParse\\.toString\\(\\); console\\.log\\(s\\.slice\\(0,500\\)\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\);process\\.exit\\(1\\);\\}\\)\"$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "printf": true,
+    "command": true,
+    "true": true,
+    "/^node --input-type=module -e \"import 'dotenv/config'; import pg from 'pg'; const \\{ Client \\} = pg; const client=new Client\\(\\{ connectionString: process\\.env\\.DATABASE_URL \\}\\); await client\\.connect\\(\\); const r=await client\\.query\\(\\\\\"SELECT migration_name, checksum, finished_at FROM _prisma_migrations ORDER BY finished_at\\\\\"\\); console\\.log\\(JSON\\.stringify\\(r\\.rows,null,2\\)\\); await client\\.end\\(\\);\"$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   },
   "cSpell.words": [
