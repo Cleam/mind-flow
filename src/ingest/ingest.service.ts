@@ -40,6 +40,9 @@ export class IngestService {
     private readonly chunkingService: SmartChunkingService,
   ) {}
 
+  /**
+   * 测试入库：使用 mock 向量验证存储链路，不依赖真实 Embedding Provider。
+   */
   async testIngest(texts: string[]): Promise<{ insertedCount: number }> {
     for (const [index, text] of texts.entries()) {
       const embedding = this.mockEmbedding();
@@ -56,11 +59,16 @@ export class IngestService {
     return { insertedCount: texts.length };
   }
 
+  /**
+   * 字符窗口切片：用于 JSON 直传文本的基础分块。
+   * 与 SmartChunkingService 的语义切片不同，此处更强调可预测的长度边界。
+   */
   splitText(
     text: string,
     chunkSize = IngestService.DEFAULT_CHUNK_SIZE,
     chunkOverlap = IngestService.DEFAULT_CHUNK_OVERLAP,
   ): string[] {
+    // chunk 配置先做边界校验，避免出现死循环或无意义重叠。
     if (chunkSize <= 0) {
       throw new BadRequestException('chunkSize 必须大于 0');
     }
@@ -76,6 +84,7 @@ export class IngestService {
       return [];
     }
 
+    // 文本较短时直接保留为单块，避免无效切片。
     if (normalizedText.length <= chunkSize) {
       return [normalizedText];
     }
@@ -90,6 +99,7 @@ export class IngestService {
         chunks.push(chunk);
       }
 
+      // 到达末尾后立即退出，避免多一次空循环判断。
       if (end >= normalizedText.length) {
         break;
       }
@@ -98,6 +108,9 @@ export class IngestService {
     return chunks;
   }
 
+  /**
+   * 处理 JSON 文档上传：按文档切片并累计保存结果。
+   */
   async processDocuments(
     body: UploadDocumentsDto,
   ): Promise<UploadDocumentsResult> {
@@ -107,6 +120,7 @@ export class IngestService {
     let failedCount = 0;
 
     for (const [documentIndex, document] of body.documents.entries()) {
+      // source 允许调用方显式指定，缺省时生成稳定兜底名。
       const source =
         document.source?.trim() || `upload-doc-${documentIndex + 1}`;
       const chunks = this.splitText(
@@ -126,6 +140,7 @@ export class IngestService {
       failedCount += result.failedCount;
     }
 
+    // 状态由 saved/failed 组合推导，保证返回语义一致。
     return {
       documentCount: body.documents.length,
       totalChunks,
@@ -148,9 +163,11 @@ export class IngestService {
     files: Express.Multer.File[],
     options: UploadFilesOptionsDto,
   ): Promise<UploadDocumentsResult> {
+    // parseMany 内部已做逐文件容错，这里拿到“可处理文件 + 解析失败列表”。
     const { parsed, failures: parseFailures } =
       await this.parserService.parseMany(files);
 
+    // 将解析层失败统一映射到上传失败结构，chunkIndex=-1 表示未进入切片阶段。
     const failures: UploadFailureItem[] = parseFailures.map((f) => ({
       documentIndex: f.fileIndex,
       chunkIndex: -1,
@@ -163,6 +180,7 @@ export class IngestService {
     let failedCount = 0;
 
     for (const doc of parsed) {
+      // 先清洗再切片，减少解析噪声对 embedding 质量的影响。
       const cleaned = this.cleanerService.clean(doc.content);
       const chunks = this.chunkingService.split(
         cleaned,
@@ -181,6 +199,7 @@ export class IngestService {
       failedCount += result.failedCount;
     }
 
+    // 文件级解析失败也计入失败总数，避免统计口径偏差。
     const totalFailedCount = failedCount + parseFailures.length;
     return {
       documentCount: files.length,
@@ -201,6 +220,7 @@ export class IngestService {
     let savedCount = 0;
     let failedCount = 0;
 
+    // 分批向量化：在吞吐与 provider 稳定性之间取平衡。
     for (
       let batchStart = 0;
       batchStart < chunks.length;
@@ -214,6 +234,7 @@ export class IngestService {
       try {
         const embeddings = await this.embeddingService.batchEmbed(batchChunks);
 
+        // 批量返回数量必须与输入一致，否则无法安全对位写库。
         if (embeddings.length !== batchChunks.length) {
           throw new Error('批量向量化返回数量与文本块数量不一致');
         }
@@ -235,6 +256,7 @@ export class IngestService {
 
             savedCount += 1;
           } catch (error: unknown) {
+            // 单条写库失败不影响同批其它 chunk，记录失败继续处理。
             failedCount += 1;
             failures.push({
               documentIndex,
@@ -249,6 +271,7 @@ export class IngestService {
         for (const [offset, chunk] of batchChunks.entries()) {
           const chunkIndex = batchStart + offset;
           try {
+            // 降级路径下逐条向量化，优先保证“部分可成功”。
             const embedding = await this.embeddingService.embed(chunk);
             await this.vectorService.saveChunk(
               chunk,
@@ -281,6 +304,7 @@ export class IngestService {
     savedCount: number,
     failedCount: number,
   ): UploadStatus {
+    // 部分成功与全部失败在上层用户体验上完全不同，需要明确区分。
     if (savedCount > 0 && failedCount === 0) {
       return 'success';
     }
@@ -292,6 +316,9 @@ export class IngestService {
     return 'failed';
   }
 
+  /**
+   * 生成固定维度的随机向量，仅用于测试链路，不用于真实语义检索。
+   */
   private mockEmbedding(): number[] {
     return Array.from({ length: IngestService.EMBEDDING_DIMENSION }, () =>
       Number(Math.random().toFixed(6)),

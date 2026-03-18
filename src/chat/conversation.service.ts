@@ -17,6 +17,9 @@ export class ConversationService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * 持久化单条会话消息，写入前会做 sessionId/content 的基础清洗与校验。
+   */
   async saveMessage(
     sessionId: string,
     role: ChatRole,
@@ -34,6 +37,9 @@ export class ConversationService {
     });
   }
 
+  /**
+   * 分页读取会话历史：数据库按倒序分页，再反转为时间正序返回给上层。
+   */
   async getHistory(
     sessionId: string,
     limit = ConversationService.DEFAULT_LIMIT,

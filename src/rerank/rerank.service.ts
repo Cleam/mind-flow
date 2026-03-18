@@ -12,7 +12,7 @@ export class RerankService {
   }
 
   /**
-   * 重排文档
+   * 重排文档：基于 query 对候选文档重新打分并排序。
    * @param query 查询文本
    * @param documents 待重排文档列表
    * @param topK 返回前 K 个结果（可选）
@@ -24,9 +24,10 @@ export class RerankService {
   ): Promise<RerankResultItemDto[]> {
     const results = await this.provider.rerank(query, documents);
 
-    // 如果指定了 topK，则截取前 K 个结果
+    // topK 在服务层截断，避免上层重复处理数组边界。
     const limitedResults = topK ? results.slice(0, topK) : results;
 
+    // 统一映射为 DTO，隔离 provider 返回结构差异。
     return limitedResults.map(
       (item) =>
         new RerankResultItemDto({
