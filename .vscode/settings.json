@@ -1,0 +1,35 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "pnpm": true,
+    "/^cd /Users/lee/Documents/code/study/mind-flow && node -e \"\nconst fs = require\\('fs'\\);\nconst pkg = JSON\\.parse\\(fs\\.readFileSync\\('package\\.json', 'utf8'\\)\\);\ndelete pkg\\.jest;\nfs\\.writeFileSync\\('package\\.json', JSON\\.stringify\\(pkg, null, 2\\)\\);\n\" && pnpm test 2>&1 \\| head -30$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "git -C /Users/lee/Documents/code/study/mind-flow": true,
+    "/^node -e \"import\\('pdf-parse'\\)\\.then\\(m=>\\{console\\.log\\(Object\\.keys\\(m\\)\\); console\\.log\\('default type', typeof m\\.default\\); console\\.log\\('PDFParse type', typeof m\\.PDFParse\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\); process\\.exit\\(1\\);\\}\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e \"import\\('pdf-parse'\\)\\.then\\(\\(\\{PDFParse\\}\\)=>\\{console\\.log\\('proto',Object\\.getOwnPropertyNames\\(PDFParse\\.prototype\\)\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\);process\\.exit\\(1\\);\\}\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e \"import\\('pdf-parse'\\)\\.then\\(\\(\\{PDFParse\\}\\)=>\\{const s=PDFParse\\.toString\\(\\); console\\.log\\(s\\.slice\\(0,500\\)\\);\\}\\)\\.catch\\(e=>\\{console\\.error\\(e\\);process\\.exit\\(1\\);\\}\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "printf": true,
+    "command": true,
+    "true": true,
+    "/^node --input-type=module -e \"import 'dotenv/config'; import pg from 'pg'; const \\{ Client \\} = pg; const client=new Client\\(\\{ connectionString: process\\.env\\.DATABASE_URL \\}\\); await client\\.connect\\(\\); const r=await client\\.query\\(\\\\\"SELECT migration_name, checksum, finished_at FROM _prisma_migrations ORDER BY finished_at\\\\\"\\); console\\.log\\(JSON\\.stringify\\(r\\.rows,null,2\\)\\); await client\\.end\\(\\);\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  },
+  "cSpell.words": [
+    "autoincrement",
+    "ollama",
+    "Qwen",
+    "rerank"
+  ]
+}
